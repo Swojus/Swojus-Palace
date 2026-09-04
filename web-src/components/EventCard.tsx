@@ -256,17 +256,19 @@ export function EventCard({
 
       {!isCompleted && (
         <div className="event-actions">
-          <button
-            type="button"
-            className="btn-icon btn-edit"
-            aria-label="Edit event"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit?.();
-            }}
-          >
-            <SquarePen size={18} />
-          </button>
+          {onEdit && (
+            <button
+              type="button"
+              className="btn-icon btn-edit"
+              aria-label="Edit event"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+            >
+              <SquarePen size={18} />
+            </button>
+          )}
           <button
             type="button"
             className="btn-icon btn-assign"

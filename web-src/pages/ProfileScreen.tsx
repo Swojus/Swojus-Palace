@@ -18,12 +18,21 @@ import {
   Box,
   Divider,
 } from "@mui/material";
+import { useAuth } from "../AuthContext";
+import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 
 type ProfileScreenProps = {
   onLogout: () => void;
 };
 
 export function ProfileScreen({ onLogout }: ProfileScreenProps) {
+  const { roleId, setRoleId, isAdmin } = useAuth();
+
+  const handleRoleChange = (event: any) => {
+    const val = Number(event.target.value as number);
+    setRoleId(val);
+  };
+
   return (
     <Box sx={{ maxWidth: 500, mx: "auto", mt: 4, px: 2 }}>
       <Card elevation={2} sx={{ mb: 3, borderRadius: 3 }}>
@@ -36,13 +45,18 @@ export function ProfileScreen({ onLogout }: ProfileScreenProps) {
               <Typography variant="h6" fontWeight={600}>
                 Yuvraj Akhade
               </Typography>
-              <Chip
-                icon={<ShieldCheck size={18} style={{ marginLeft: 4 }} />}
-                label="Admin"
-                color="success"
-                size="small"
-                sx={{ mt: 0.5, fontWeight: 500 }}
-              />
+              <FormControl size="small" sx={{ mt: 0.5, minWidth: 140 }}>
+                <InputLabel id="role-select-label">Role</InputLabel>
+                <Select
+                  labelId="role-select-label"
+                  value={roleId}
+                  label="Role"
+                  onChange={handleRoleChange}
+                >
+                  <MenuItem value={1}>Admin</MenuItem>
+                  <MenuItem value={2}>Manager</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
           </Stack>
           <Divider sx={{ my: 2 }} />

@@ -39,6 +39,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { enIN } from "date-fns/locale";
 import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 import { useMuhurt } from "../MuhurtContext";
+import { useAuth } from "../AuthContext";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
@@ -242,6 +243,13 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   );
 
   const { muhurtDates } = useMuhurt();
+  const { isAdmin } = useAuth();
+
+  React.useEffect(() => {
+    if (mode === "edit" && !isAdmin) {
+      navigate("/events", { replace: true });
+    }
+  }, [mode, isAdmin, navigate]);
 
   // Helper function to format date to YYYY-MM-DD without timezone issues
   const toLocalIsoDate = (date: Date) => {

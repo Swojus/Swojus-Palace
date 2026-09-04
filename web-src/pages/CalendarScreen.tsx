@@ -17,6 +17,7 @@ import {
   isRecordCompleted,
 } from "../../src/data/mock";
 import { EventCard } from "../components";
+import { useAuth } from "../AuthContext";
 import { useMuhurt } from "../MuhurtContext";
 import {
   Box,
@@ -54,6 +55,7 @@ export function CalendarScreen() {
     startOfMonth(new Date()),
   );
   const { muhurtDates } = useMuhurt();
+  const { isAdmin } = useAuth();
 
   const selectedDateKey = format(selectedDate, "yyyy-MM-dd");
   const eventsForDay = sortRecordsByDateTime(
@@ -582,7 +584,9 @@ export function CalendarScreen() {
                       onClick: () => navigate(`/inventory/missing/${event.id}`),
                     }
                   : {
-                      onEdit: () => navigate(`/events/${event.id}/edit`),
+                      ...(isAdmin
+                        ? { onEdit: () => navigate(`/events/${event.id}/edit`) }
+                        : {}),
                       onCheckIn: () => navigate(`/events/${event.id}/check-in`),
                       onCheckOut: () =>
                         navigate(`/events/${event.id}/check-out`),

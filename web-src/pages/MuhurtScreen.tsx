@@ -18,6 +18,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { useAuth } from "../AuthContext";
 
 export function MuhurtScreen() {
   const { muhurtDates, todayMuhurtDates, addMuhurtDate, removeMuhurtDate } =
@@ -53,6 +54,8 @@ export function MuhurtScreen() {
     date: string;
     description: string;
   }>(null);
+
+  const { isAdmin } = useAuth();
 
   const isDuplicateDate = React.useMemo(
     () =>
@@ -221,7 +224,9 @@ export function MuhurtScreen() {
                 No Muhurt dates yet
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Tap the + button to add your first Muhurt date.
+                {isAdmin
+                  ? "Tap the + button to add your first Muhurt date."
+                  : "Muhurt dates are managed by an admin."}
               </Typography>
             </Stack>
           </CardContent>
@@ -268,27 +273,31 @@ export function MuhurtScreen() {
                     </Typography>
                   </Box>
                 </Box>
-                <IconButton
-                  aria-label={`Delete muhurt date ${item.date}`}
-                  color="error"
-                  onClick={() => handleDeleteClick(item)}
-                >
-                  <Trash2 size={18} />
-                </IconButton>
+                {isAdmin && (
+                  <IconButton
+                    aria-label={`Delete muhurt date ${item.date}`}
+                    color="error"
+                    onClick={() => handleDeleteClick(item)}
+                  >
+                    <Trash2 size={18} />
+                  </IconButton>
+                )}
               </CardContent>
             </Card>
           ))}
         </Stack>
       )}
 
-      <Fab
-        color="primary"
-        aria-label="add muhurt"
-        sx={{ position: "fixed", bottom: 150, right: 24, zIndex: 1000 }}
-        onClick={handleOpenDialog}
-      >
-        <Plus />
-      </Fab>
+      {isAdmin && (
+        <Fab
+          color="primary"
+          aria-label="add muhurt"
+          sx={{ position: "fixed", bottom: 150, right: 24, zIndex: 1000 }}
+          onClick={handleOpenDialog}
+        >
+          <Plus />
+        </Fab>
+      )}
 
       <Dialog
         open={isDialogOpen}

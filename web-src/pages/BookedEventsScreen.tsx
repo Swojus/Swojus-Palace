@@ -5,6 +5,7 @@ import {
   sortRecordsByDateTime,
 } from "../../src/data/mock";
 import { EventCard, DateRangeFilter } from "../components";
+import { useAuth } from "../AuthContext";
 import { CalendarDays, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, Typography, Stack, Box, Chip } from "@mui/material";
@@ -13,6 +14,7 @@ import SearchFilter from "../components/SearchFilter";
 
 export function BookedEventsScreen() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   const [fromDate, setFromDate] = React.useState<Date | null>(null);
   const [toDate, setToDate] = React.useState<Date | null>(null);
@@ -117,7 +119,9 @@ export function BookedEventsScreen() {
             <EventCard
               key={event.id}
               event={event}
-              onEdit={() => navigate(`/events/${event.id}/edit`)}
+              {...(isAdmin
+                ? { onEdit: () => navigate(`/events/${event.id}/edit`) }
+                : {})}
               onCheckIn={() => navigate(`/events/${event.id}/check-in`)}
               onCheckOut={() => navigate(`/events/${event.id}/check-out`)}
             />

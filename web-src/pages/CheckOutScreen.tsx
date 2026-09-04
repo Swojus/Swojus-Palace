@@ -278,11 +278,9 @@ export function CheckOutScreen() {
           width: "100%",
           maxWidth: 480,
           justifyContent: "center",
-          opacity: hasReturnData ? 1 : 0.45,
-          cursor: hasReturnData ? "pointer" : "not-allowed",
         }}
         onClick={completeCheckOut}
-        disabled={!hasReturnData}
+        disabled={false}
       >
         <Check size={18} />
         Complete Check-Out
