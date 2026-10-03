@@ -1,27 +1,77 @@
 import React from "react";
-import { mockRecords, sortRecordsByDateTime } from "../../src/data/mock";
+import { sortRecordsByDateTime } from "../../src/data/mock";
 import { EnquiryCard, DateRangeFilter } from "../components";
 import { Users } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Snackbar,
   Stack,
   Typography,
 } from "@mui/material";
 import SearchFilter from "../components/SearchFilter";
+import apiFetch from "../utils/api";
+import { useAuth } from "../AuthContext";
 
 export function EnquiryListScreen() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const toLocalIsoDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
   const [searchParams, setSearchParams] = useSearchParams();
   const [fromDate, setFromDate] = React.useState<Date | null>(null);
   const [toDate, setToDate] = React.useState<Date | null>(null);
   const [search, setSearch] = React.useState("");
   const [showConvertedToast, setShowConvertedToast] = React.useState(false);
+  const [events, setEvents] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [deleteTarget, setDeleteTarget] = React.useState<null | {
+    id: string;
+    title: string;
+    customerName?: string;
+  }>(null);
+
+  const handleDeleteRequest = (
+    eventId?: string,
+    title?: string,
+    customerName?: string,
+  ) => {
+    if (!eventId) return;
+    setDeleteTarget({
+      id: eventId,
+      title: title ?? "This enquiry",
+      customerName,
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+
+    void apiFetch(`/api/events/${deleteTarget.id}`, { method: "DELETE" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Delete failed");
+        setEvents((prev) =>
+          prev.filter((item) => (item.id ?? item._id) !== deleteTarget.id),
+        );
+        setDeleteTarget(null);
+      })
+      .catch(() => {
+        setDeleteTarget(null);
+      });
+  };
 
   React.useEffect(() => {
     if (searchParams.get("refresh")) {
@@ -30,30 +80,64 @@ export function EnquiryListScreen() {
     }
   }, [searchParams, setSearchParams]);
 
+  React.useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+
+    void apiFetch(`/api/events`, { method: "GET" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
+        setEvents(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setEvents([]))
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const enquiries = sortRecordsByDateTime(
-    mockRecords.filter((record) => {
+    events.filter((record) => {
+      const recordId = record.id ?? record._id;
+      const recordDate = record.eventDate;
       if (record.eventSource !== "Enquiry") return false;
-      if (record.eventDate) {
-        const eventDate = new Date(record.eventDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (eventDate < today) return false;
-        if (fromDate && eventDate < fromDate) return false;
-        if (toDate && eventDate > toDate) return false;
+      if (recordDate) {
+        const recordDateKey = recordDate.slice(0, 10);
+        const todayKey = toLocalIsoDate(new Date());
+        if (recordDateKey < todayKey) return false;
+        if (fromDate) {
+          const fromKey = toLocalIsoDate(fromDate);
+          if (recordDateKey < fromKey) return false;
+        }
+        if (toDate) {
+          const toKey = toLocalIsoDate(toDate);
+          if (recordDateKey > toKey) return false;
+        }
       }
       if (!search) return true;
       const haystack =
         `${record.customerName ?? ""} ${record.phone ?? ""}`.toLowerCase();
-      return haystack.includes(search.toLowerCase());
+      return (
+        haystack.includes(search.toLowerCase()) ||
+        String(recordId ?? "")
+          .toLowerCase()
+          .includes(search.toLowerCase())
+      );
     }),
   );
 
   const activeCount = enquiries.length;
+  const showLoader = loading && events.length === 0;
+  const showEmptyState = !loading && enquiries.length === 0;
 
   const isConvertDisabled = (enquiryDate?: string) =>
     Boolean(
       enquiryDate &&
-      mockRecords.some(
+      events.some(
         (record) =>
           record.eventSource === "Booking" && record.eventDate === enquiryDate,
       ),
@@ -118,7 +202,15 @@ export function EnquiryListScreen() {
         </Box>
       </Box>
 
-      {enquiries.length === 0 ? (
+      {showLoader ? (
+        <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
+          <CardContent>
+            <Typography color="text.secondary" align="center">
+              Loading enquiries...
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : showEmptyState ? (
         <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
           <CardContent>
             <Typography color="text.secondary" align="center">
@@ -128,16 +220,31 @@ export function EnquiryListScreen() {
         </Card>
       ) : (
         <Stack spacing={1.2}>
-          {enquiries.map((enquiry) => (
-            <EnquiryCard
-              key={enquiry.id}
-              enquiry={enquiry}
-              isConvertDisabled={isConvertDisabled(enquiry.eventDate)}
-              onConvert={() =>
-                navigate(`/events/new?enquiryId=${enquiry.id}&asEdit=1`)
-              }
-            />
-          ))}
+          {enquiries.map((enquiry) => {
+            const enquiryId = enquiry.id ?? enquiry._id;
+            return (
+              <EnquiryCard
+                key={String(enquiryId ?? "")}
+                enquiry={{ ...enquiry, id: String(enquiryId ?? "") }}
+                isConvertDisabled={isConvertDisabled(enquiry.eventDate)}
+                onConvert={() =>
+                  navigate(
+                    `/events/new?enquiryId=${encodeURIComponent(String(enquiryId ?? ""))}&asEdit=1`,
+                  )
+                }
+                {...(isAdmin
+                  ? {
+                      onDelete: () =>
+                        handleDeleteRequest(
+                          enquiry.id ?? enquiry._id,
+                          enquiry.title,
+                          enquiry.customerName,
+                        ),
+                    }
+                  : {})}
+              />
+            );
+          })}
         </Stack>
       )}
 
@@ -156,6 +263,57 @@ export function EnquiryListScreen() {
           Converted successfully.
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            boxShadow: "0 12px 32px rgba(39,48,66,0.14)",
+          },
+        }}
+      >
+        <DialogTitle sx={{ px: 2, pt: 1.75, pb: 1 }}>
+          Delete Enquiry
+        </DialogTitle>
+        <DialogContent sx={{ px: 2, pt: 1, pb: 1.5 }}>
+          <Typography variant="body1" color="text.secondary">
+            Are you sure you want to delete this enquiry?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            {deleteTarget?.customerName || "Customer"} — {deleteTarget?.title}
+          </Typography>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            px: 2,
+            pb: 2,
+            pt: 0.5,
+            justifyContent: "flex-end",
+            gap: 1,
+          }}
+        >
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={() => setDeleteTarget(null)}
+            sx={{ px: 2.25, py: 0.8, borderRadius: 2, fontWeight: 700 }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            sx={{ px: 2.25, py: 0.8, borderRadius: 2, fontWeight: 700 }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -12,6 +12,8 @@ import {
   LogIn,
   LogOut,
   ChevronRight,
+  Trash2,
+  Plus,
 } from "lucide-react";
 
 type EventCardProps = {
@@ -19,6 +21,8 @@ type EventCardProps = {
   mode?: "booked" | "completed";
   onClick?: () => void;
   onEdit?: () => void;
+  onDelete?: () => void;
+  onConvert?: () => void;
   onCheckIn?: () => void;
   onCheckOut?: () => void;
 };
@@ -28,10 +32,16 @@ export function EventCard({
   mode = "booked",
   onClick,
   onEdit,
+  onDelete,
+  onConvert,
   onCheckIn,
   onCheckOut,
 }: EventCardProps) {
   const isCompleted = mode === "completed";
+  const isBookedEvent = event.eventSource === "Booking";
+  const isEnquiryEvent = event.eventSource === "Enquiry";
+  const canManageBooking = !isCompleted && isBookedEvent;
+  const canManageEnquiry = !isCompleted && isEnquiryEvent;
   const formatDisplayDate = (value: string | null | undefined) => {
     if (!value) return "";
 
@@ -172,10 +182,12 @@ export function EventCard({
           <Bookmark size={16} />
           {event.title}
         </p>
-        <p>
-          <Users size={16} />
-          {event.rooms.length} rooms
-        </p>
+        {Array.isArray(event.rooms) && event.rooms.length > 0 ? (
+          <p>
+            <Users size={16} />
+            {event.rooms.length} rooms
+          </p>
+        ) : null}
       </div>
 
       {isCompleted && onClick ? (
@@ -254,7 +266,7 @@ export function EventCard({
         </button>
       ) : null}
 
-      {!isCompleted && (
+      {canManageBooking && (
         <div className="event-actions">
           {onEdit && (
             <button
@@ -267,6 +279,19 @@ export function EventCard({
               }}
             >
               <SquarePen size={18} />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              className="btn-icon btn-delete"
+              aria-label="Delete event"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 size={18} />
             </button>
           )}
           <button
@@ -293,6 +318,38 @@ export function EventCard({
               <LogOut size={18} />
             </button>
           ) : null}
+        </div>
+      )}
+
+      {canManageEnquiry && (
+        <div className="event-actions">
+          {onDelete && (
+            <button
+              type="button"
+              className="btn-icon btn-delete"
+              aria-label="Delete enquiry"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 size={18} />
+            </button>
+          )}
+          {onConvert && (
+            <button
+              type="button"
+              className="btn-icon btn-assign"
+              aria-label="Convert enquiry"
+              title="Convert enquiry"
+              onClick={(e) => {
+                e.stopPropagation();
+                onConvert();
+              }}
+            >
+              <Plus size={18} />
+            </button>
+          )}
         </div>
       )}
     </article>

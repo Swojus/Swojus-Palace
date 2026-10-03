@@ -1,9 +1,9 @@
 import React from "react";
-import { mockRecords } from "../../src/data/mock";
 import {
-  clearStoredNotifications,
   getStoredNotifications,
+  removeStoredNotification,
 } from "../../src/data/notificationLog";
+import apiFetch from "../utils/api";
 import { RecordItem } from "../../src/types";
 import { useMuhurt } from "../MuhurtContext";
 import {
@@ -24,6 +24,29 @@ function listMissing(record: RecordItem) {
       missing: Math.max(0, item.issuedQty - item.returnedQty),
     }))
     .filter(({ missing }) => missing > 0);
+}
+
+const REMINDER_DISMISS_KEY = "eventflow/dismissed-reminders";
+
+function readDismissedReminderIds() {
+  if (typeof window === "undefined") return new Set<string>();
+
+  try {
+    const raw = window.localStorage.getItem(REMINDER_DISMISS_KEY);
+    if (!raw) return new Set<string>();
+    const parsed = JSON.parse(raw);
+    return new Set(Array.isArray(parsed) ? parsed.filter(Boolean) : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function writeDismissedReminderIds(ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(
+    REMINDER_DISMISS_KEY,
+    JSON.stringify(Array.from(ids)),
+  );
 }
 
 const actionMeta = {
@@ -72,15 +95,18 @@ function NoticeCard({
   description,
   icon: Icon,
   accent,
+  onClick,
 }: {
   title: string;
   description: string;
   icon: React.ComponentType<{ size?: number; color?: string }>;
   accent: string;
+  onClick?: () => void;
 }) {
   return (
     <Card
       elevation={0}
+      onClick={onClick}
       sx={{
         borderRadius: 3,
         border: `1px solid ${accent}22`,
@@ -89,6 +115,7 @@ function NoticeCard({
         overflow: "hidden",
         position: "relative",
         boxShadow: "0 10px 22px rgba(39,48,66,0.08)",
+        cursor: onClick ? "pointer" : "default",
         "&::before": {
           content: '""',
           position: "absolute",
@@ -141,25 +168,51 @@ function NoticeCard({
 
 export function NotificationsScreen() {
   const { todayMuhurtDates } = useMuhurt();
+  const [events, setEvents] = React.useState<any[]>([]);
+  const [dismissedActivityIds, setDismissedActivityIds] = React.useState<
+    Set<string>
+  >(new Set());
+  const [dismissedReminderIds, setDismissedReminderIds] = React.useState<
+    Set<string>
+  >(() => readDismissedReminderIds());
 
-  const missing = mockRecords.flatMap((record) =>
+  React.useEffect(() => {
+    writeDismissedReminderIds(dismissedReminderIds);
+  }, [dismissedReminderIds]);
+
+  React.useEffect(() => {
+    let mounted = true;
+    void apiFetch(`/api/events`, { method: "GET" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
+        setEvents(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setEvents([]));
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const missing = events.flatMap((record) =>
     listMissing(record).map(({ item, missing: qty }) => ({
-      id: `${record.id}-${item.id}`,
+      id: `${record.id ?? record._id}-${item.id}`,
       event: record.title,
       item: item.name,
       qty,
     })),
   );
 
-  const activityNotifications = getStoredNotifications().map(
-    (notification) => ({
+  const activityNotifications = getStoredNotifications()
+    .filter((notification) => !dismissedActivityIds.has(notification.id))
+    .map((notification) => ({
       id: notification.id,
       title: actionMeta[notification.action].title,
       description: `${notification.eventName}${notification.eventDate ? ` • ${notification.eventDate}` : ""}`,
       icon: actionMeta[notification.action].icon,
       accent: actionMeta[notification.action].accent,
-    }),
-  );
+    }));
 
   const reminderNotifications = [
     ...todayMuhurtDates.map((muhurt) => ({
@@ -176,14 +229,23 @@ export function NotificationsScreen() {
       icon: reminderMeta.missing.icon,
       accent: reminderMeta.missing.accent,
     })),
-  ];
-
-  React.useEffect(() => {
-    clearStoredNotifications();
-  }, []);
+  ].filter((notice) => !dismissedReminderIds.has(notice.id));
 
   const totalAlerts =
     activityNotifications.length + reminderNotifications.length;
+
+  const handleDismissActivity = (id: string) => {
+    setDismissedActivityIds((prev) => new Set(prev).add(id));
+    removeStoredNotification(id);
+  };
+
+  const handleDismissReminder = (id: string) => {
+    setDismissedReminderIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  };
 
   return (
     <Box sx={{ maxWidth: 640, mx: "auto", mt: 2, px: 1.25, pb: 3 }}>
@@ -283,6 +345,7 @@ export function NotificationsScreen() {
                     description={notice.description}
                     icon={notice.icon}
                     accent={notice.accent}
+                    onClick={() => handleDismissActivity(notice.id)}
                   />
                 ))}
               </Stack>
@@ -334,6 +397,7 @@ export function NotificationsScreen() {
                     description={notice.description}
                     icon={notice.icon}
                     accent={notice.accent}
+                    onClick={() => handleDismissReminder(notice.id)}
                   />
                 ))}
               </Stack>

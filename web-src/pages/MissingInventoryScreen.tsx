@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { mockRecords } from "../../src/data/mock";
+import apiFetch from "../utils/api";
 import {
   AlertCircle,
   ArrowLeft,
@@ -20,7 +20,32 @@ import {
 export function MissingInventoryScreen() {
   const navigate = useNavigate();
   const { eventId } = useParams();
-  const event = mockRecords.find((item) => item.id === eventId);
+  const [event, setEvent] = React.useState<any | null>(null);
+
+  React.useEffect(() => {
+    if (!eventId) {
+      setEvent(null);
+      return;
+    }
+
+    let mounted = true;
+    void apiFetch(`/api/events/${eventId}`, { method: "GET" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Event not found");
+        return res.json();
+      })
+      .then((data) => {
+        if (!mounted) return;
+        setEvent(data || null);
+      })
+      .catch(() => {
+        if (mounted) setEvent(null);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [eventId]);
 
   if (!event) {
     return (

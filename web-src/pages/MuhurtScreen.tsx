@@ -1,7 +1,7 @@
 import React from "react";
 import { useMuhurt } from "../MuhurtContext";
 import { CalendarDays, Plus, Trash2 } from "lucide-react";
-import { mockRecords } from "../../src/data/mock";
+import apiFetch from "../utils/api";
 import {
   Box,
   Button,
@@ -54,6 +54,30 @@ export function MuhurtScreen() {
     date: string;
     description: string;
   }>(null);
+  const [bookedDates, setBookedDates] = React.useState<Set<string>>(new Set());
+
+  React.useEffect(() => {
+    let mounted = true;
+    void apiFetch(`/api/events`, { method: "GET" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
+        const nextBookedDates = new Set(
+          (Array.isArray(data) ? data : [])
+            .filter(
+              (record) =>
+                record.eventSource === "Booking" && Boolean(record.eventDate),
+            )
+            .map((record) => String(record.eventDate).slice(0, 10)),
+        );
+        setBookedDates(nextBookedDates);
+      })
+      .catch(() => setBookedDates(new Set()));
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const { isAdmin } = useAuth();
 
@@ -61,19 +85,6 @@ export function MuhurtScreen() {
     () =>
       Boolean(draftDate && muhurtDates.some((item) => item.date === draftDate)),
     [draftDate, muhurtDates],
-  );
-
-  const bookedDates = React.useMemo(
-    () =>
-      new Set(
-        mockRecords
-          .filter(
-            (record) =>
-              record.eventSource === "Booking" && Boolean(record.eventDate),
-          )
-          .map((record) => record.eventDate as string),
-      ),
-    [],
   );
 
   const resetDraft = () => {

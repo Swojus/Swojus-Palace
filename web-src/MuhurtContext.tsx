@@ -1,4 +1,5 @@
 import React from "react";
+import apiFetch from "./utils/api";
 
 export type MuhurtDate = {
   id: string;
@@ -20,10 +21,15 @@ type MuhurtContextValue = {
 
 const STORAGE_KEY = "eventflow/muhurt-dates";
 
-const initialMuhurtDates: MuhurtDate[] = [
-  { id: "1", date: "2026-03-15", description: "Holi Celebration" },
-  { id: "2", date: "2026-04-14", description: "New Year (Hindi Calendar)" },
-];
+const initialMuhurtDates: MuhurtDate[] = [];
+
+function normalizeMuhurtDate(item: any): MuhurtDate {
+  return {
+    id: item?.id ?? item?._id ?? "",
+    date: item?.date ?? "",
+    description: item?.description ?? "",
+  };
+}
 
 const MuhurtContext = React.createContext<MuhurtContextValue | undefined>(
   undefined,
@@ -37,19 +43,28 @@ function toIsoDate(date: Date) {
 }
 
 export function MuhurtProvider({ children }: { children: React.ReactNode }) {
-  const [muhurtDates, setMuhurtDates] = React.useState<MuhurtDate[]>(() => {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return initialMuhurtDates;
-    try {
-      return JSON.parse(raw) as MuhurtDate[];
-    } catch {
-      return initialMuhurtDates;
-    }
-  });
+  const [muhurtDates, setMuhurtDates] =
+    React.useState<MuhurtDate[]>(initialMuhurtDates);
 
   React.useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(muhurtDates));
-  }, [muhurtDates]);
+    let mounted = true;
+    void apiFetch(`/api/muhurt`, { method: "GET" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
+        if (Array.isArray(data)) {
+          setMuhurtDates(
+            data.map(normalizeMuhurtDate).filter((item) => item.id),
+          );
+        }
+      })
+      .catch(() => {
+        // keep local initial data on failure
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const today = toIsoDate(new Date());
   const todayMuhurtDates = React.useMemo(
@@ -59,16 +74,34 @@ export function MuhurtProvider({ children }: { children: React.ReactNode }) {
 
   const addMuhurtDate = React.useCallback(
     ({ date, description }: AddMuhurtDateInput) => {
-      setMuhurtDates((current) => [
-        ...current,
-        { id: Date.now().toString(), date, description },
-      ]);
+      void apiFetch(`/api/muhurt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, description }),
+      })
+        .then((r) => r.json())
+        .then((created) => {
+          setMuhurtDates((current) => [
+            ...current,
+            normalizeMuhurtDate(created),
+          ]);
+        })
+        .catch(() => {
+          // ignore errors for now
+        });
     },
     [],
   );
 
   const removeMuhurtDate = React.useCallback((id: string) => {
-    setMuhurtDates((current) => current.filter((item) => item.id !== id));
+    void apiFetch(`/api/muhurt/${id}`, { method: "DELETE" })
+      .then((r) => r.json())
+      .then(() => {
+        setMuhurtDates((current) => current.filter((item) => item.id !== id));
+      })
+      .catch(() => {
+        // ignore errors for now
+      });
   }, []);
 
   const value = React.useMemo(

@@ -11,3 +11,4 @@ export { MissingInventoryScreen } from "./MissingInventoryScreen";
 export { MuhurtScreen } from "./MuhurtScreen";
 export { NotificationsScreen } from "./NotificationsScreen";
 export { ProfileScreen } from "./ProfileScreen";
+export { UsersScreen } from "./UsersScreen";

@@ -1,7 +1,7 @@
 import React from "react";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "./theme";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { MuhurtProvider } from "./MuhurtContext";
 import { AuthProvider, useAuth } from "./AuthContext";
 import { AppLayout } from "./layouts/AppLayout";
@@ -24,30 +24,46 @@ import {
   ProfileScreen,
   EventFormScreen,
   MissingInventoryScreen,
+  UsersScreen,
 } from "./pages";
 
-const AUTH_KEY = "eventflow/authenticated";
-
 export default function App() {
-  const [authenticated, setAuthenticated] = React.useState(
-    window.localStorage.getItem(AUTH_KEY) === "true",
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </ThemeProvider>
   );
+}
 
-  const onLogin = React.useCallback(() => {
-    window.localStorage.setItem(AUTH_KEY, "true");
-    setAuthenticated(true);
-  }, []);
+function AppRouter() {
+  const { user, loading, logout } = useAuth();
+  const navigate = useNavigate();
+  const [authReady, setAuthReady] = React.useState(false);
 
-  const onLogout = React.useCallback(() => {
-    window.localStorage.removeItem(AUTH_KEY);
-    setAuthenticated(false);
-  }, []);
+  // Keep hook order stable: all hooks declared unconditionally
+  React.useEffect(() => {
+    if (!loading) setAuthReady(true);
+  }, [loading]);
+
+  React.useEffect(() => {
+    const handleAuthExpired = () => {
+      navigate("/login", { replace: true });
+    };
+
+    window.addEventListener("auth:logout", handleAuthExpired);
+    return () => window.removeEventListener("auth:logout", handleAuthExpired);
+  }, [navigate]);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
+      // Only request browser notification permission on secure origins (not during dev over unsupported hosts)
       if (
-        window.location.protocol === "http:" ||
-        window.location.protocol === "https:"
+        (window.location.protocol === "http:" ||
+          window.location.protocol === "https:") &&
+        window.location.hostname !== "localhost"
       ) {
         void requestBrowserNotificationPermission();
       }
@@ -56,25 +72,20 @@ export default function App() {
     }
   }, []);
 
-  if (!authenticated) {
+  if (!authReady) {
+    return null;
+  }
+
+  if (!user) {
     return (
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Routes>
-          <Route path="/login" element={<LoginScreen onLogin={onLogin} />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </ThemeProvider>
+      <Routes>
+        <Route path="/login" element={<LoginScreen onLogin={() => {}} />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     );
   }
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <AppInner onLogout={onLogout} />
-      </AuthProvider>
-    </ThemeProvider>
-  );
+
+  return <AppInner onLogout={logout} />;
 }
 
 function AppInner({ onLogout }: { onLogout: () => void }) {
@@ -114,6 +125,7 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
           />
           <Route path="/muhurt" element={<MuhurtScreen />} />
           <Route path="/notifications" element={<NotificationsScreen />} />
+          <Route path="/users" element={<UsersScreen />} />
           <Route
             path="/profile"
             element={<ProfileScreen onLogout={onLogout} />}

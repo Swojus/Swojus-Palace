@@ -1,5 +1,8 @@
 import type { RecordItem } from "../types";
 
+// Toggle client-side mock data. Set to `true` to enable mocks during local development.
+const USE_MOCKS = false;
+
 export const getDefaultInventory = () => [
   {
     id: "bedsheet",
@@ -61,137 +64,8 @@ export const getDefaultInventory = () => [
 
 const fixedInventory = getDefaultInventory();
 
-export const mockRecords: RecordItem[] = [
-  // Dates are generated relative to "today" so test data stays useful over time.
-  // Use `isoDate(offsetDays)` where offsetDays is number of days from today.
-  // We'll provide a mix: some future bookings, some enquiries, and some past (completed) events.
-  {
-    id: "evt_1",
-    title: "Amit Mehra's Birthday Party",
-    customerName: "Amit Mehra",
-    phone: "+91-98765-43210",
-    altPhone: "+91-98765-43212",
-    venue: "Phase 1",
-    rooms: ["Phase 1-101", "Phase 1-102"],
-    eventDate: undefined as any, // will be set below
-    eventTime: "18:00",
-    eventType: "Birthday",
-    eventSource: "Booking",
-    inventory: fixedInventory,
-  },
-  {
-    id: "evt_2",
-    title: "Sharma Wedding Reception",
-    customerName: "Sharma Family",
-    phone: "+91-91234-56789",
-    altPhone: "+91-91234-56791",
-    venue: "Phase 2",
-    rooms: ["Phase 2-101", "Phase 2-102", "Others-101"],
-    eventDate: undefined as any,
-    eventTime: "19:30",
-    eventType: "Wedding",
-    eventSource: "Booking",
-    inventory: fixedInventory,
-  },
-  {
-    id: "evt_3",
-    title: "Tata Digital Partner Meet",
-    customerName: "Priya Sharma",
-    phone: "+91-98111-22334",
-    altPhone: "+91-98111-22339",
-    venue: "Phase 1",
-    rooms: ["Phase 1-101", "Phase 1-102"],
-    eventDate: undefined as any,
-    eventTime: "10:00",
-    eventType: "Corporate",
-    eventSource: "Booking",
-    inventory: fixedInventory,
-  },
-  {
-    id: "evt_4",
-    title: "Sharma Wedding Reception",
-    customerName: "Amit Jain",
-    phone: "+91-99222-33445",
-    altPhone: "+91-99222-33449",
-    venue: "Phase 2",
-    rooms: ["Phase 2-101", "Phase 2-102", "Others-101"],
-    eventDate: undefined as any,
-    eventTime: "17:00",
-    eventType: "Wedding",
-    eventSource: "Enquiry",
-    inventory: fixedInventory,
-  },
-  {
-    id: "evt_5",
-    title: "Tata Digital Partner Meet",
-    customerName: "Sana Kapoor",
-    phone: "+91-99333-44556",
-    altPhone: "+91-99333-44559",
-    venue: "Phase 1",
-    rooms: ["Phase 1-103"],
-    eventDate: undefined as any,
-    eventTime: "09:30",
-    eventType: "Corporate",
-    eventSource: "Enquiry",
-    inventory: fixedInventory,
-  },
-  {
-    id: "evt_6",
-    title: "Sharma Wedding Reception",
-    customerName: "Rajesh Gupta",
-    phone: "+91-99444-55667",
-    altPhone: "+91-99444-55679",
-    venue: "Phase 2",
-    rooms: ["Phase 2-103"],
-    eventDate: undefined as any,
-    eventTime: "14:00",
-    eventType: "Wedding",
-    eventSource: "Enquiry",
-    inventory: fixedInventory,
-  },
-  {
-    id: "evt_7",
-    title: "Mumbai Startup Expo",
-    customerName: "Neha Reddy",
-    phone: "+91-99555-66778",
-    altPhone: "+91-99555-66789",
-    venue: "Phase 1",
-    rooms: ["Others-202", "Others-203"],
-    eventDate: undefined as any,
-    eventTime: "11:00",
-    eventType: "Conference",
-    eventSource: "Booking",
-    inventory: fixedInventory,
-  },
-  {
-    id: "evt_8",
-    title: "Tata Digital Partner Meet",
-    customerName: "Vikram Singh",
-    phone: "+91-99666-77889",
-    altPhone: "+91-99666-77899",
-    venue: "Phase 1",
-    rooms: ["Phase 1-104", "Phase 1-105"],
-    eventDate: undefined as any,
-    eventTime: "08:30",
-    eventType: "Corporate",
-    eventSource: "Booking",
-    inventory: fixedInventory,
-  },
-  {
-    id: "evt_9",
-    title: "Sharma Wedding Reception",
-    customerName: "Pooja Nair",
-    phone: "+91-99777-88990",
-    altPhone: "+91-99777-88999",
-    venue: "Phase 2",
-    rooms: ["Phase 2-104"],
-    eventDate: undefined as any,
-    eventTime: "16:00",
-    eventType: "Wedding",
-    eventSource: "Enquiry",
-    inventory: fixedInventory,
-  },
-];
+// Mock data is intentionally disabled. Keep the array empty so the app uses only real backend data.
+export let mockRecords: RecordItem[] = [];
 
 export function createMockRecordId() {
   return `evt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -238,29 +112,7 @@ export function saveMockRecord(record: MockRecordDraft, existingId?: string) {
   return savedRecord;
 }
 
-// --- Dynamic test dates ---
-// Set eventDate for mockRecords relative to today so the seeded data
-// automatically contains past (completed) and upcoming events.
-(function assignDynamicDates() {
-  const today = new Date();
-  function isoDate(offsetDays: number) {
-    const d = new Date(today);
-    d.setDate(d.getDate() + offsetDays);
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  }
-
-  // offsets chosen to implement: 2 past bookings, 2 past enquiries,
-  // 2 future bookings, 2 future enquiries; any remaining records are future.
-  // Mapping follows mockRecords order.
-  const offsets = [-10, -20, 3, -5, -2, 1, 7, 14, 4];
-
-  for (let i = 0; i < mockRecords.length && i < offsets.length; i++) {
-    mockRecords[i].eventDate = isoDate(offsets[i]);
-  }
-})();
+// Mock seeding is disabled; do not generate any placeholder data for the app.
 
 export function saveMockRecordUpdate(
   existingRecord: RecordItem,
@@ -277,6 +129,26 @@ export function saveMockRecordUpdate(
 
 export function getRecordDate(record: RecordItem) {
   return record.eventDate ?? "";
+}
+
+function toDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeDateKey(value: string) {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed) return "";
+
+  const isoMatch = trimmed.match(/^\d{4}-\d{2}-\d{2}/);
+  if (isoMatch) return isoMatch[0];
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) return "";
+
+  return toDateKey(parsed);
 }
 
 export function sortRecordsByDateTime(records: RecordItem[]) {
@@ -302,6 +174,8 @@ export function isRecordCompleted(record: RecordItem) {
     return true;
   }
 
-  const date = getRecordDate(record);
-  return Boolean(date) && new Date(date) < new Date();
+  const date = normalizeDateKey(getRecordDate(record));
+  if (!date) return false;
+
+  return date < toDateKey(new Date());
 }

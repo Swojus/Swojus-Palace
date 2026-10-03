@@ -1,5 +1,6 @@
-import React from "react";
 import { mockRecords } from "../../src/data/mock";
+import apiFetch from "../utils/api";
+import React from "react";
 import { AlertCircle, MinusCircle, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,24 +16,44 @@ import SearchFilter from "../components/SearchFilter";
 
 export function InventoryOverviewScreen() {
   const navigate = useNavigate();
-  const allItems = mockRecords.flatMap((record) => record.inventory ?? []);
-  const totalMissing = allItems.reduce(
-    (sum, item) => sum + Math.max(0, item.issuedQty - item.returnedQty),
-    0,
-  );
+  const [events, setEvents] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState("");
 
-  const missingByEvent = mockRecords
+  React.useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    void apiFetch(`/api/events`, { method: "GET" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
+        const normalized = Array.isArray(data)
+          ? data.map((e: any) => ({ ...(e as any), id: e.id || e._id }))
+          : [];
+        setEvents(normalized);
+      })
+      .catch(() => setEvents([]))
+      .finally(() => setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const allItems = events.flatMap((record) => record.inventory ?? []);
+  const totalMissing = allItems.reduce(
+    (sum, item) => sum + Math.max(0, item.issuedQty - (item.returnedQty || 0)),
+    0,
+  );
+
+  const missingByEvent = events
     .map((record) => {
       const missing = (record.inventory ?? [])
         .map((item) => ({
           name: item.name,
-          qty: Math.max(0, item.issuedQty - item.returnedQty),
+          qty: Math.max(0, item.issuedQty - (item.returnedQty || 0)),
         }))
         .filter((item) => item.qty > 0);
-
       const total = missing.reduce((sum, item) => sum + item.qty, 0);
-
       return {
         id: record.id,
         title: record.title,

@@ -12,6 +12,7 @@ import {
   Link,
 } from "@mui/material";
 import logo from "../assets/logo.svg";
+import { useAuth } from "../AuthContext";
 
 type LoginScreenProps = {
   onLogin: () => void;
@@ -40,7 +41,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     return /^\d{10}$/.test(digits);
   };
 
-  const handleLogin = (event: React.FormEvent) => {
+  const sanitizePhone = (value: string) =>
+    value.replace(/\D/g, "").slice(0, 10);
+
+  const { login } = useAuth();
+
+  const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
 
     if (!email || !password) {
@@ -54,7 +60,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     }
 
     setLoginError(null);
-    onLogin();
+    try {
+      await login(email, password);
+      onLogin();
+    } catch (e: any) {
+      setLoginError(e.message || "Login failed");
+    }
   };
 
   const handleSignUp = (event: React.FormEvent) => {
@@ -87,7 +98,30 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     }
 
     setSignUpError(null);
-    onLogin();
+    (async () => {
+      try {
+        const res = await fetch(`/api/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            name: signUpData.name,
+            email: signUpData.email,
+            phone: sanitizePhone(signUpData.phone),
+            password: signUpData.password,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Registration failed");
+        }
+        // auto-login using existing login flow
+        await login(signUpData.email, signUpData.password);
+        onLogin();
+      } catch (e: any) {
+        setSignUpError(e.message || "Registration failed");
+      }
+    })();
   };
 
   return (
@@ -259,11 +293,19 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       type="tel"
                       value={signUpData.phone}
                       onChange={(e) =>
-                        setSignUpData({ ...signUpData, phone: e.target.value })
+                        setSignUpData({
+                          ...signUpData,
+                          phone: sanitizePhone(e.target.value),
+                        })
                       }
                       placeholder="9876543210"
                       required
                       fullWidth
+                      inputProps={{
+                        maxLength: 10,
+                        inputMode: "numeric",
+                        pattern: "[0-9]*",
+                      }}
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">

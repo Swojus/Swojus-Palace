@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../AuthContext";
 import { Link, useLocation } from "react-router-dom";
+import { getStoredNotifications } from "../../src/data/notificationLog";
 import {
   Bell,
   CalendarDays,
@@ -22,7 +24,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/events", label: "Events", icon: CalendarDays },
+  { to: "/events", label: "Booked", icon: CalendarDays },
   { to: "/enquiries", label: "Enquiries", icon: MessageCircle },
   { to: "/completed", label: "Completed", icon: Trophy },
   // { to: "/inventory", label: "Inventory", icon: LayoutGrid },
@@ -32,16 +34,40 @@ const navItems: NavItem[] = [
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(
+    () => getStoredNotifications().length,
+  );
+
+  useEffect(() => {
+    const refreshCount = () =>
+      setNotificationCount(getStoredNotifications().length);
+
+    refreshCount();
+    window.addEventListener("eventflow:notifications-updated", refreshCount);
+    window.addEventListener("storage", refreshCount);
+
+    return () => {
+      window.removeEventListener(
+        "eventflow:notifications-updated",
+        refreshCount,
+      );
+      window.removeEventListener("storage", refreshCount);
+    };
+  }, []);
 
   const closeMenu = () => setMenuOpen(false);
 
+  const { isAdmin } = useAuth();
+
   const sideMenuItems: NavItem[] = [
     { to: "/calendar", label: "Calendar", icon: CalendarDays },
-    { to: "/events", label: "Events", icon: CalendarDays },
+    { to: "/events", label: "Booked", icon: CalendarDays },
     { to: "/enquiries", label: "Enquiries", icon: MessageCircle },
     { to: "/completed", label: "Completed", icon: Trophy },
     { to: "/inventory", label: "Inventory", icon: LayoutGrid },
     { to: "/muhurt", label: "Muhurt", icon: Sparkles },
+    // admin-only users view
+    ...(isAdmin ? [{ to: "/users", label: "Users", icon: UserCircle2 }] : []),
     { to: "/profile", label: "Profile", icon: UserCircle2 },
   ];
 
@@ -111,10 +137,35 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <Link
             to="/notifications"
             className="topbar-icon notification-icon"
-            title="Notifications"
-            aria-label="Notifications"
+            title={`Notifications${notificationCount > 0 ? ` (${notificationCount})` : ""}`}
+            aria-label={`Notifications${notificationCount > 0 ? `, ${notificationCount} unread` : ""}`}
+            style={{ position: "relative" }}
           >
             <Bell size={20} />
+            {notificationCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: -4,
+                  right: -4,
+                  minWidth: 18,
+                  height: 18,
+                  padding: "0 4px",
+                  borderRadius: 999,
+                  background: "#ef4444",
+                  color: "#fff",
+                  fontSize: 10,
+                  fontWeight: 800,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  lineHeight: 1,
+                  border: "2px solid rgba(15, 23, 42, 0.9)",
+                }}
+              >
+                {notificationCount > 99 ? "99+" : notificationCount}
+              </span>
+            )}
           </Link>
         </header>
         <main className="content">{children}</main>

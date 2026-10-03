@@ -19,6 +19,7 @@ import {
 import { EventCard } from "../components";
 import { useAuth } from "../AuthContext";
 import { useMuhurt } from "../MuhurtContext";
+import apiFetch from "../utils/api";
 import {
   Box,
   Button,
@@ -54,12 +55,28 @@ export function CalendarScreen() {
   const [currentMonth, setCurrentMonth] = React.useState<Date>(
     startOfMonth(new Date()),
   );
+  const [events, setEvents] = React.useState<any[]>([]);
   const { muhurtDates } = useMuhurt();
   const { isAdmin } = useAuth();
 
+  React.useEffect(() => {
+    let mounted = true;
+    void apiFetch(`/api/events`, { method: "GET" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!mounted) return;
+        setEvents(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setEvents([]));
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const selectedDateKey = format(selectedDate, "yyyy-MM-dd");
   const eventsForDay = sortRecordsByDateTime(
-    mockRecords.filter((record) => record.eventDate === selectedDateKey),
+    events.filter((record) => record.eventDate === selectedDateKey),
   );
 
   const days = getCalendarDays(currentMonth);
@@ -68,7 +85,7 @@ export function CalendarScreen() {
   todayStart.setHours(0, 0, 0, 0);
 
   const eventCountByDate = new Map<string, number>();
-  mockRecords.forEach((record) => {
+  events.forEach((record) => {
     if (record.eventDate) {
       eventCountByDate.set(
         record.eventDate,
@@ -97,9 +114,11 @@ export function CalendarScreen() {
             sx={{
               width: "100%",
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               gap: 0.5,
+              minWidth: 0,
             }}
           >
             <Typography
@@ -110,11 +129,13 @@ export function CalendarScreen() {
                 fontWeight: 700,
                 lineHeight: 1.1,
                 display: "-webkit-box",
-                WebkitLineClamp: 2,
+                WebkitLineClamp: 3,
                 WebkitBoxOrient: "vertical",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                maxWidth: "100%",
+                width: "100%",
+                whiteSpace: "normal",
+                overflowWrap: "anywhere",
                 wordBreak: "break-word",
                 textAlign: "center",
               }}
@@ -355,15 +376,23 @@ export function CalendarScreen() {
             const muhurtDescription = muhurtByDate.get(dayKey);
 
             return (
-              <Button
+              <Box
                 key={dayKey}
+                role="button"
+                tabIndex={0}
                 onClick={() => {
                   setSelectedDate(day);
                   if (!isSameMonth(day, currentMonth))
                     setCurrentMonth(startOfMonth(day));
                 }}
-                variant="text"
-                color={isSelected ? "primary" : "inherit"}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedDate(day);
+                    if (!isSameMonth(day, currentMonth))
+                      setCurrentMonth(startOfMonth(day));
+                  }
+                }}
                 sx={{
                   minHeight: 92,
                   overflow: "visible",
@@ -390,6 +419,7 @@ export function CalendarScreen() {
                       : isToday
                         ? "1px solid rgba(15,23,42,0.08)"
                         : "1px solid transparent",
+                  cursor: "pointer",
                 }}
               >
                 <Box
@@ -428,9 +458,11 @@ export function CalendarScreen() {
                         sx={{
                           width: "100%",
                           display: "flex",
+                          flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
                           gap: 0.5,
+                          minWidth: 0,
                         }}
                       >
                         <Typography
@@ -441,11 +473,13 @@ export function CalendarScreen() {
                             fontWeight: 700,
                             lineHeight: 1.1,
                             display: "-webkit-box",
-                            WebkitLineClamp: 2,
+                            WebkitLineClamp: 3,
                             WebkitBoxOrient: "vertical",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
-                            maxWidth: "100%",
+                            width: "100%",
+                            whiteSpace: "normal",
+                            overflowWrap: "anywhere",
                             wordBreak: "break-word",
                             textAlign: "center",
                           }}
@@ -550,13 +584,21 @@ export function CalendarScreen() {
                     </IconButton>
                   ) : null}
                 </Box>
-              </Button>
+              </Box>
             );
           })}
         </Box>
       </Card>
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 1,
+          gap: 1,
+        }}
+      >
         <Typography variant="h6" fontWeight={800} color="text.primary">
           Events on {format(selectedDate, "MMM d")}
         </Typography>
@@ -564,32 +606,83 @@ export function CalendarScreen() {
 
       {eventsForDay.length === 0 ? (
         <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
-          <CardContent>
+          <CardContent
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1.5,
+            }}
+          >
             <Typography color="text.secondary" align="center">
               No events scheduled for this date.
             </Typography>
+            {!selectedDate || selectedDate < todayStart ? null : (
+              <IconButton
+                size="small"
+                aria-label={`Add event for ${format(selectedDate, "MMM d, yyyy")}`}
+                onClick={() => navigate(`/events/new?date=${selectedDateKey}`)}
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "50%",
+                  border: "1px solid rgba(0,0,0,0.08)",
+                  bgcolor: "transparent",
+                  color: "text.primary",
+                  "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
+                }}
+              >
+                +
+              </IconButton>
+            )}
           </CardContent>
         </Card>
       ) : (
         <Stack spacing={2}>
-          {eventsForDay.map((event) => {
+          {eventsForDay.map((event, idx) => {
             const completed = isRecordCompleted(event);
+            const eventId = event.id ?? event._id;
             return (
               <EventCard
-                key={event.id}
+                key={eventId ?? idx}
                 event={event}
                 mode={completed ? "completed" : "booked"}
                 {...(completed
                   ? {
-                      onClick: () => navigate(`/inventory/missing/${event.id}`),
+                      onClick: () => {
+                        if (!eventId) return;
+                        navigate(`/inventory/missing/${eventId}`);
+                      },
                     }
                   : {
                       ...(isAdmin
-                        ? { onEdit: () => navigate(`/events/${event.id}/edit`) }
+                        ? {
+                            onEdit: () => {
+                              if (!eventId) return;
+                              navigate(`/events/${eventId}/edit`);
+                            },
+                          }
                         : {}),
-                      onCheckIn: () => navigate(`/events/${event.id}/check-in`),
-                      onCheckOut: () =>
-                        navigate(`/events/${event.id}/check-out`),
+                      ...(event.eventSource === "Enquiry"
+                        ? {
+                            onConvert: () => {
+                              if (!eventId) return;
+                              navigate(
+                                `/events/new?enquiryId=${encodeURIComponent(String(eventId))}&asEdit=1`,
+                              );
+                            },
+                          }
+                        : {
+                            onCheckIn: () => {
+                              if (!eventId) return;
+                              navigate(`/events/${eventId}/check-in`);
+                            },
+                            onCheckOut: () => {
+                              if (!eventId) return;
+                              navigate(`/events/${eventId}/check-out`);
+                            },
+                          }),
                     })}
               />
             );

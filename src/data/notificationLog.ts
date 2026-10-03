@@ -183,6 +183,7 @@ function writeStoredNotifications(notifications: StoredNotification[]) {
   }
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
+  window.dispatchEvent(new CustomEvent("eventflow:notifications-updated"));
 }
 
 export function getStoredNotifications() {
@@ -211,6 +212,13 @@ export function addStoredNotification(
 
   writeStoredNotifications(notifications);
   void triggerNativeNotification(notification);
+}
+
+export function removeStoredNotification(id: string) {
+  const notifications = readStoredNotifications().filter(
+    (notification) => notification.id !== id,
+  );
+  writeStoredNotifications(notifications);
 }
 
 export function clearStoredNotifications() {

@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { mockRecords, saveMockRecordUpdate } from "../../src/data/mock";
+import apiFetch from "../utils/api";
 import { addStoredNotification } from "../../src/data/notificationLog";
 import {
   ArrowLeft,
@@ -45,7 +46,50 @@ function iconForItem(name: string) {
 export function CheckInScreen() {
   const navigate = useNavigate();
   const { eventId } = useParams();
-  const event = mockRecords.find((item) => item.id === eventId);
+  const [event, setEvent] = React.useState<any | null>(
+    () => mockRecords.find((item) => item.id === eventId) || null,
+  );
+
+  React.useEffect(() => {
+    let mounted = true;
+    if (eventId) {
+      void apiFetch(`/api/events/${eventId}`, { method: "GET" })
+        .then((r) => r.json())
+        .then((data) => {
+          if (!mounted) return;
+          setEvent(data);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [eventId]);
+
+  const inventory = event?.inventory ?? [];
+
+  const inventoryRows = React.useMemo<IssuedRow[]>(
+    () =>
+      inventory.map((item: any) => ({
+        id: item.id,
+        label: item.name,
+        issued: item.issuedQty,
+      })),
+    [inventory],
+  );
+
+  const [issuedCounts, setIssuedCounts] = React.useState<
+    Record<string, number>
+  >({});
+
+  React.useEffect(() => {
+    if (!event) return;
+    setIssuedCounts(
+      Object.fromEntries(
+        (event.inventory ?? []).map((item: any) => [item.id, item.issuedQty]),
+      ),
+    );
+  }, [event]);
 
   if (!event) {
     return (
@@ -56,24 +100,6 @@ export function CheckInScreen() {
       </section>
     );
   }
-
-  const inventoryRows = React.useMemo<IssuedRow[]>(
-    () =>
-      (event.inventory ?? []).map((item) => ({
-        id: item.id,
-        label: item.name,
-        issued: item.issuedQty,
-      })),
-    [event.inventory],
-  );
-
-  const [issuedCounts, setIssuedCounts] = React.useState<
-    Record<string, number>
-  >(() =>
-    Object.fromEntries(
-      (event.inventory ?? []).map((item) => [item.id, item.issuedQty]),
-    ),
-  );
 
   const hasIssuedData = Object.values(issuedCounts).some((count) => count > 0);
 
@@ -86,23 +112,39 @@ export function CheckInScreen() {
   };
 
   const completeCheckIn = () => {
-    const updatedInventory = (event.inventory ?? []).map((item) => ({
+    const updatedInventory = (event.inventory ?? []).map((item: any) => ({
       ...item,
       issuedQty: issuedCounts[item.id] ?? item.issuedQty,
     }));
 
-    saveMockRecordUpdate(event, {
-      inventory: updatedInventory,
-      completed: false,
-    });
-
-    addStoredNotification(
-      "checkin",
-      event.customerName ?? event.title,
-      event.eventDate,
-    );
-
-    navigate("/events");
+    // call API
+    void apiFetch(`/api/events/${eventId}/checkin`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ issuedCounts }),
+    })
+      .then((r) => r.json())
+      .then((saved) => {
+        addStoredNotification(
+          "checkin",
+          saved.customerName ?? saved.title,
+          saved.eventDate,
+        );
+        navigate("/events");
+      })
+      .catch(() => {
+        // fallback
+        saveMockRecordUpdate(event, {
+          inventory: updatedInventory,
+          completed: false,
+        });
+        addStoredNotification(
+          "checkin",
+          event.customerName ?? event.title,
+          event.eventDate,
+        );
+        navigate("/events");
+      });
   };
 
   return (

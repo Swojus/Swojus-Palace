@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { mockRecords, saveMockRecordUpdate } from "../../src/data/mock";
+import apiFetch from "../utils/api";
 import { addStoredNotification } from "../../src/data/notificationLog";
 import {
   ArrowLeft,
@@ -53,7 +54,46 @@ export function CheckOutScreen() {
   const params = useParams();
   const { issuedCounts } = (location.state as CheckoutLocationState) || {};
   const eventId = params.eventId;
-  const event = mockRecords.find((e) => e.id === eventId);
+  const [event, setEvent] = React.useState<any | null>(
+    () => mockRecords.find((e) => e.id === eventId) || null,
+  );
+
+  React.useEffect(() => {
+    let mounted = true;
+    if (eventId) {
+      void apiFetch(`/api/events/${eventId}`, { method: "GET" })
+        .then((r) => r.json())
+        .then((data) => {
+          if (!mounted) return;
+          setEvent(data);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [eventId]);
+
+  const inventory = event?.inventory ?? [];
+
+  const rows = React.useMemo<CheckoutRow[]>(
+    () =>
+      inventory.map((item: any) => ({
+        id: item.id,
+        label: item.name,
+        expected: Math.max(0, issuedCounts?.[item.id] ?? item.issuedQty),
+      })),
+    [inventory, issuedCounts],
+  );
+
+  const [returnedCounts, setReturnedCounts] = React.useState<
+    Record<string, number>
+  >({});
+
+  React.useEffect(() => {
+    if (!event) return;
+    setReturnedCounts({});
+  }, [event]);
 
   if (!event) {
     return (
@@ -65,50 +105,56 @@ export function CheckOutScreen() {
     );
   }
 
-  const rows = React.useMemo<CheckoutRow[]>(
-    () =>
-      (event.inventory ?? []).map((item) => ({
-        id: item.id,
-        label: item.name,
-        expected: Math.max(0, issuedCounts?.[item.id] ?? item.issuedQty),
-      })),
-    [event.inventory, issuedCounts],
-  );
-
-  const [returnedCounts, setReturnedCounts] = React.useState<
-    Record<string, number>
-  >(() => Object.fromEntries(rows.map((item) => [item.id, 0])));
-
   const hasReturnData = Object.values(returnedCounts).some(
     (count) => count > 0,
   );
 
   const decrease = (id: string) => {
-    setReturnedCounts((prev) => ({ ...prev, [id]: Math.max(0, prev[id] - 1) }));
+    setReturnedCounts((prev) => ({
+      ...prev,
+      [id]: Math.max(0, Number(prev[id] ?? 0) - 1),
+    }));
   };
 
   const increase = (id: string) => {
-    setReturnedCounts((prev) => ({ ...prev, [id]: prev[id] + 1 }));
+    setReturnedCounts((prev) => ({
+      ...prev,
+      [id]: Number(prev[id] ?? 0) + 1,
+    }));
   };
 
   const completeCheckOut = () => {
-    const updatedInventory = (event.inventory ?? []).map((item) => ({
+    const updatedInventory = (event.inventory ?? []).map((item: any) => ({
       ...item,
       returnedQty: returnedCounts[item.id] ?? item.returnedQty ?? 0,
     }));
 
-    saveMockRecordUpdate(event, {
-      inventory: updatedInventory,
-      completed: true,
-    });
-
-    addStoredNotification(
-      "checkout",
-      event.customerName ?? event.title,
-      event.eventDate,
-    );
-
-    navigate("/completed");
+    void apiFetch(`/api/events/${eventId}/checkout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ returnedCounts }),
+    })
+      .then((r) => r.json())
+      .then((saved) => {
+        addStoredNotification(
+          "checkout",
+          saved.customerName ?? saved.title,
+          saved.eventDate,
+        );
+        navigate("/completed");
+      })
+      .catch(() => {
+        saveMockRecordUpdate(event, {
+          inventory: updatedInventory,
+          completed: true,
+        });
+        addStoredNotification(
+          "checkout",
+          event.customerName ?? event.title,
+          event.eventDate,
+        );
+        navigate("/completed");
+      });
   };
 
   return (

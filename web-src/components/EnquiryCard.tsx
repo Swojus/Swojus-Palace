@@ -9,18 +9,21 @@ import {
   Bookmark,
   Users,
   Plus,
+  Trash2,
 } from "lucide-react";
 
 type EnquiryCardProps = {
   enquiry: RecordItem;
   isConvertDisabled?: boolean;
   onConvert?: () => void;
+  onDelete?: () => void;
 };
 
 export function EnquiryCard({
   enquiry,
   isConvertDisabled = false,
   onConvert,
+  onDelete,
 }: EnquiryCardProps) {
   const normalizedPhone = (enquiry.phone ?? "")
     .replace(/\s+/g, "")
@@ -116,6 +119,19 @@ export function EnquiryCard({
       </div>
 
       <div className="event-actions">
+        {onDelete && (
+          <button
+            type="button"
+            className="btn-icon btn-delete"
+            aria-label="Delete enquiry"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
         <button
           type="button"
           className="btn-icon btn-assign"

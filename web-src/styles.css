@@ -262,6 +262,10 @@
   background: linear-gradient(135deg, #f7a40a, #ef8f00);
 }
 
+.btn-delete {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
 .filter-btn {
   width: 38px;
   height: 38px;

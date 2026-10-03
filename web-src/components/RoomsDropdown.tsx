@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 
 interface RoomsDropdownProps {
   selectedRooms: string[];
@@ -52,22 +53,44 @@ export function RoomsDropdown({ selectedRooms, onChange }: RoomsDropdownProps) {
   }, [selectedRooms]);
   const [open, setOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const portalNodeRef = React.useRef<HTMLDivElement | null>(null);
+  const [portalStyle, setPortalStyle] = React.useState<React.CSSProperties>({});
 
   React.useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setOpen(false);
-      }
+      const target = event.target as Node;
+      const insideDropdown = dropdownRef.current?.contains(target);
+      const insidePortal = portalNodeRef.current?.contains(target);
+      if (!insideDropdown && !insidePortal) setOpen(false);
     }
+
+    function updatePortalPosition() {
+      if (!dropdownRef.current) return;
+      const rect = dropdownRef.current.getBoundingClientRect();
+      setPortalStyle({
+        position: "absolute",
+        left: rect.left + window.scrollX,
+        top: rect.bottom + window.scrollY,
+        width: rect.width,
+        zIndex: 1302,
+      });
+    }
+
     if (open) {
       document.addEventListener("mousedown", handleClickOutside);
+      window.addEventListener("resize", updatePortalPosition);
+      window.addEventListener("scroll", updatePortalPosition, true);
+      updatePortalPosition();
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("resize", updatePortalPosition);
+      window.removeEventListener("scroll", updatePortalPosition, true);
     }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("resize", updatePortalPosition);
+      window.removeEventListener("scroll", updatePortalPosition, true);
+    };
   }, [open]);
 
   const summary =
@@ -119,26 +142,25 @@ export function RoomsDropdown({ selectedRooms, onChange }: RoomsDropdownProps) {
         </span>
       </div>
       {open && (
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: "100%",
-            zIndex: 1302,
-            background: "#fff",
-            border: "1.5px solid #bdbdbd",
-            borderRadius: "12px",
-            boxShadow:
-              "0 8px 32px 0 rgba(99,102,241,0.10), 0 1.5px 8px #e6e6f6",
-            padding: 16,
-            maxHeight: 420,
-            overflowY: "auto",
-            minHeight: 180,
-            scrollbarColor: "#bdbdbd #f0f0fa",
-            scrollbarWidth: "thin",
-          }}
-        >
+        (portalNodeRef.current || (portalNodeRef.current = document.createElement("div")),
+        createPortal(
+          <div
+            style={{
+              ...portalStyle,
+              background: "#fff",
+              border: "1.5px solid #bdbdbd",
+              borderRadius: "12px",
+              boxShadow:
+                "0 8px 32px 0 rgba(99,102,241,0.10), 0 1.5px 8px #e6e6f6",
+              padding: 16,
+              maxHeight: 420,
+              overflowY: "auto",
+              minHeight: 180,
+              scrollbarColor: "#bdbdbd #f0f0fa",
+              scrollbarWidth: "thin",
+            }}
+            ref={portalNodeRef as any}
+          >
           <div style={{ marginBottom: 12 }}>
             <div
               style={{
@@ -384,8 +406,10 @@ export function RoomsDropdown({ selectedRooms, onChange }: RoomsDropdownProps) {
               ))}
             </div>
           </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        ))
+      }
     </div>
   );
 }

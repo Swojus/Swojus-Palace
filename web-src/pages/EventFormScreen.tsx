@@ -6,6 +6,7 @@ import {
   mockRecords,
   saveMockRecord,
 } from "../../src/data/mock";
+import apiFetch from "../utils/api";
 import { addStoredNotification } from "../../src/data/notificationLog";
 import type { RecordItem } from "../../src/types";
 import { CalendarDays, Save, X } from "lucide-react";
@@ -50,21 +51,39 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   const dateParam = searchParams.get("date") || undefined;
   const asEditFlag = searchParams.get("asEdit");
 
-  const existingEvent:
-    | (RecordItem & {
-        altPhone?: string;
-        eventType?: string;
-        confirmed?: boolean;
+  const [existingEvent, setExistingEvent] = React.useState<any | undefined>(
+    undefined,
+  );
+  const [allEvents, setAllEvents] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    let mounted = true;
+    void apiFetch(`/api/events`, { method: "GET" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
+        setAllEvents(Array.isArray(data) ? data : []);
       })
-    | undefined =
-    mode === "edit"
-      ? mockRecords.find(
-          (record) => record.id === eventId && record.eventSource === "Booking",
-        )
-      : undefined;
+      .catch(() => setAllEvents([]));
+
+    if (mode === "edit" && eventId) {
+      void apiFetch(`/api/events/${eventId}`, { method: "GET" })
+        .then((r) => r.json())
+        .then((data) => {
+          if (!mounted) return;
+          setExistingEvent(data);
+        })
+        .catch(() => {});
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [mode, eventId]);
   const enquiry = enquiryId
-    ? mockRecords.find(
-        (record) => record.id === enquiryId && record.eventSource === "Enquiry",
+    ? allEvents.find(
+        (record) =>
+          (record.id ?? record._id) === enquiryId &&
+          record.eventSource === "Enquiry",
       )
     : undefined;
   const sourceRecord = existingEvent ?? enquiry;
@@ -77,8 +96,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
     eventType: sourceRecord?.eventType || "",
     venue: sourceRecord?.venue || "",
     rooms: sourceRecord?.rooms || [],
-    eventSource:
-      existingEvent?.eventSource || (enquiry ? "Booking" : "Enquiry"),
+    eventSource: existingEvent?.eventSource || "Booking",
     confirmed: (sourceRecord as any)?.confirmed || false,
     eventDate: sourceRecord?.eventDate || dateParam || "",
     eventTime: sourceRecord?.eventTime || "",
@@ -93,13 +111,23 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
       eventType: sourceRecord?.eventType || "",
       venue: sourceRecord?.venue || "",
       rooms: sourceRecord?.rooms || [],
-      eventSource:
-        existingEvent?.eventSource || (enquiry ? "Booking" : "Enquiry"),
+      eventSource: (existingEvent && existingEvent.eventSource) || "Booking",
       confirmed: (sourceRecord as any)?.confirmed || false,
-      eventDate: sourceRecord?.eventDate || dateParam || "",
-      eventTime: sourceRecord?.eventTime || "",
+      eventDate:
+        (existingEvent && existingEvent.eventDate) ||
+        sourceRecord?.eventDate ||
+        dateParam ||
+        "",
+      eventTime:
+        (existingEvent && existingEvent.eventTime) ||
+        sourceRecord?.eventTime ||
+        "",
     });
   }, [sourceRecord, existingEvent, enquiry]);
+
+  function sanitizePhoneInput(value: string) {
+    return value.replace(/\D/g, "").slice(0, 10);
+  }
 
   function updateField(field: string, value: any) {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -122,58 +150,120 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
       : sourceRecord?.inventory?.length
         ? sourceRecord.inventory
         : getDefaultInventory();
-    const targetId = existingEvent?.id ?? enquiry?.id;
+    const targetId =
+      existingEvent?.id ?? existingEvent?._id ?? enquiry?.id ?? enquiry?._id;
     const isConvertingEnquiry = Boolean(enquiry && !existingEvent);
     const isCreatingNewEvent = !existingEvent && !enquiry;
 
-    const savedRecord = saveMockRecord(
-      {
-        title: formData.title,
-        customerName: formData.customer,
-        phone: formData.phone,
-        altPhone: formData.altPhone,
-        venue: formData.venue,
-        rooms: formData.rooms,
-        eventDate: formData.eventDate,
-        eventTime: formData.eventTime,
-        eventType: formData.eventType,
-        eventSource: formData.eventSource as RecordItem["eventSource"],
-        inventory,
-      },
-      targetId,
+    const payload = {
+      title: formData.title,
+      customerName: formData.customer,
+      phone: formData.phone,
+      altPhone: formData.altPhone,
+      venue: formData.venue,
+      rooms: formData.rooms,
+      eventDate: formData.eventDate,
+      eventTime: formData.eventTime,
+      eventType: formData.eventType,
+      eventSource: formData.eventSource as RecordItem["eventSource"],
+      inventory,
+    };
+
+    const requestId =
+      existingEvent?._id || existingEvent?.id || enquiry?._id || enquiry?.id;
+    const shouldUpdateExistingRecord = Boolean(
+      mode === "edit" || (isConvertingEnquiry && requestId),
     );
 
-    if (isCreatingNewEvent) {
-      addStoredNotification(
-        "created",
-        savedRecord.customerName ?? savedRecord.title,
-        savedRecord.eventDate,
-      );
-    } else if (isConvertingEnquiry) {
-      addStoredNotification(
-        "converted",
-        savedRecord.customerName ?? savedRecord.title,
-        savedRecord.eventDate,
-      );
-    } else if (existingEvent) {
-      addStoredNotification(
-        "updated",
-        savedRecord.customerName ?? savedRecord.title,
-        savedRecord.eventDate,
-      );
-    }
-
-    if (isConvertingEnquiry) {
-      navigate(`/calendar`, { replace: true });
+    if (mode === "edit" && existingEvent) {
+      void apiFetch(`/api/events/${existingEvent._id || existingEvent.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((r) => r.json())
+        .then((savedRecord) => {
+          addStoredNotification(
+            "updated",
+            savedRecord.customerName ?? savedRecord.title,
+            savedRecord.eventDate,
+          );
+          navigate(-1);
+        })
+        .catch(() => {
+          // fallback to local save
+          saveMockRecord(payload as any, targetId);
+          navigate(-1);
+        });
       return;
     }
 
-    if (isCreatingNewEvent) {
-      navigate(`/calendar`, { replace: true });
+    if (isConvertingEnquiry && requestId) {
+      void apiFetch(`/api/events/${requestId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then((r) => r.json())
+        .then((savedRecord) => {
+          addStoredNotification(
+            "converted",
+            savedRecord.customerName ?? savedRecord.title,
+            savedRecord.eventDate,
+          );
+          navigate("/events", { replace: true });
+        })
+        .catch(() => {
+          const savedRecord = saveMockRecord(payload as any, targetId);
+          addStoredNotification(
+            "converted",
+            savedRecord.customerName ?? savedRecord.title,
+            savedRecord.eventDate,
+          );
+          navigate("/events", { replace: true });
+        });
       return;
     }
 
-    navigate(-1);
+    // create new
+    void apiFetch(`/api/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => r.json())
+      .then((savedRecord) => {
+        const redirectPath =
+          savedRecord.eventSource === "Enquiry" ? "/enquiries" : "/events";
+
+        addStoredNotification(
+          isCreatingNewEvent ? "created" : "converted",
+          savedRecord.customerName ?? savedRecord.title,
+          savedRecord.eventDate,
+        );
+
+        if (isConvertingEnquiry || isCreatingNewEvent || !existingEvent) {
+          navigate(redirectPath, { replace: true });
+        } else {
+          navigate(-1);
+        }
+      })
+      .catch(() => {
+        // fallback to local
+        const savedRecord = saveMockRecord(payload as any, targetId);
+        const redirectPath =
+          savedRecord.eventSource === "Enquiry" ? "/enquiries" : "/events";
+        if (isCreatingNewEvent) {
+          addStoredNotification(
+            "created",
+            savedRecord.customerName ?? savedRecord.title,
+            savedRecord.eventDate,
+          );
+          navigate(redirectPath, { replace: true });
+        } else {
+          navigate(-1);
+        }
+      });
   }
 
   // Room group arrays for group-wise selection
@@ -246,10 +336,15 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   const { isAdmin } = useAuth();
 
   React.useEffect(() => {
+    if (mode === "edit" && !eventId) {
+      navigate("/events", { replace: true });
+      return;
+    }
+
     if (mode === "edit" && !isAdmin) {
       navigate("/events", { replace: true });
     }
-  }, [mode, isAdmin, navigate]);
+  }, [mode, isAdmin, eventId, navigate]);
 
   // Helper function to format date to YYYY-MM-DD without timezone issues
   const toLocalIsoDate = (date: Date) => {
@@ -279,11 +374,11 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   };
 
   const isFromEnquiry = Boolean(enquiry && !existingEvent && !asEditFlag);
-  const conflictingBooking = mockRecords.find(
+  const conflictingBooking = allEvents.find(
     (record) =>
       record.eventSource === "Booking" &&
       record.eventDate === formData.eventDate &&
-      record.id !== existingEvent?.id,
+      (record.id ?? record._id) !== (existingEvent?.id ?? existingEvent?._id),
   );
   const hasBookingConflict =
     Boolean(formData.eventDate) && Boolean(conflictingBooking);
@@ -610,19 +705,33 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
               />
               <TextField
                 label="Phone *"
-                placeholder="+91..."
+                placeholder="9876543210"
                 value={formData.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
+                onChange={(e) =>
+                  updateField("phone", sanitizePhoneInput(e.target.value))
+                }
                 required
                 fullWidth
+                inputProps={{
+                  maxLength: 10,
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                }}
                 sx={prefillFieldSx}
               />
               <TextField
                 label="Alternative Number"
-                placeholder="+91..."
+                placeholder="9876543210"
                 value={formData.altPhone}
-                onChange={(e) => updateField("altPhone", e.target.value)}
+                onChange={(e) =>
+                  updateField("altPhone", sanitizePhoneInput(e.target.value))
+                }
                 fullWidth
+                inputProps={{
+                  maxLength: 10,
+                  inputMode: "numeric",
+                  pattern: "[0-9]*",
+                }}
                 sx={prefillFieldSx}
               />
               <TextField

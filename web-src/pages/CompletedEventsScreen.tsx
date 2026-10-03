@@ -1,9 +1,6 @@
 import React from "react";
-import {
-  mockRecords,
-  isRecordCompleted,
-  sortRecordsByDateTime,
-} from "../../src/data/mock";
+import { isRecordCompleted, sortRecordsByDateTime } from "../../src/data/mock";
+import apiFetch from "../utils/api";
 import { EventCard, DateRangeFilter } from "../components";
 import { CheckCircle2 } from "lucide-react";
 import { Card, CardContent, Typography, Stack, Box, Chip } from "@mui/material";
@@ -15,10 +12,31 @@ export function CompletedEventsScreen() {
   const [fromDate, setFromDate] = React.useState<Date | null>(null);
   const [toDate, setToDate] = React.useState<Date | null>(null);
   const [search, setSearch] = React.useState("");
+  const [events, setEvents] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    void apiFetch(`/api/events`, { method: "GET" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!mounted) return;
+        const normalized = Array.isArray(data)
+          ? data.map((e: any) => ({ ...(e as any), id: e.id || e._id }))
+          : [];
+        setEvents(normalized);
+      })
+      .catch(() => setEvents([]))
+      .finally(() => setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const completedEvents = sortRecordsByDateTime(
-    mockRecords.filter((record) => {
-      if (!isRecordCompleted(record)) return false;
+    events.filter((record) => {
+      if (!record || !record.completed) return false;
       const recordDate = new Date(record.eventDate ?? "");
       if (fromDate && recordDate < fromDate) return false;
       if (toDate && recordDate > toDate) return false;
@@ -28,6 +46,9 @@ export function CompletedEventsScreen() {
       return haystack.includes(search.toLowerCase());
     }),
   );
+
+  const showLoader = loading && events.length === 0;
+  const showEmptyState = !loading && completedEvents.length === 0;
 
   return (
     <Box sx={{ maxWidth: 480, mx: "auto", mt: 2, px: 1 }}>
@@ -88,7 +109,15 @@ export function CompletedEventsScreen() {
         </Box>
       </Box>
 
-      {completedEvents.length === 0 ? (
+      {showLoader ? (
+        <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
+          <CardContent>
+            <Typography color="text.secondary" align="center">
+              Loading completed events...
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : showEmptyState ? (
         <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
           <CardContent>
             <Typography color="text.secondary" align="center">
@@ -98,9 +127,9 @@ export function CompletedEventsScreen() {
         </Card>
       ) : (
         <Stack spacing={2}>
-          {completedEvents.map((event) => (
+          {completedEvents.map((event, idx) => (
             <EventCard
-              key={event.id}
+              key={event.id ?? event._id ?? idx}
               event={event}
               mode="completed"
               onClick={() => navigate(`/inventory/missing/${event.id}`)}
