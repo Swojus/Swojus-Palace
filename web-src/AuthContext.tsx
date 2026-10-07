@@ -35,7 +35,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchMe = React.useCallback(async (t: string) => {
     try {
-      const res = await apiFetch(`/api/auth/me`, { method: "GET" });
+      const res = await apiFetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/me`,
+        { method: "GET" },
+      );
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       setUser({
@@ -76,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await fetch(`/api/auth/login`, {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -104,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     // call server to clear refresh token cookie
-    void fetch(`/api/auth/logout`, {
+    void fetch(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
     }).catch(() => {});
