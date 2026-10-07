@@ -3,6 +3,22 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit) {
   const raw = window.localStorage.getItem(TOKEN_KEY);
   const token = raw || null;
 
+  const forceAuthLogout = () => {
+    try {
+      window.localStorage.removeItem(TOKEN_KEY);
+    } catch (e) {}
+
+    window.dispatchEvent(new CustomEvent("auth:logout"));
+
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname !== "/login" &&
+      !window.location.pathname.startsWith("/login")
+    ) {
+      window.location.replace("/login");
+    }
+  };
+
   const headers = new Headers(init && init.headers ? init.headers : undefined);
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
@@ -19,10 +35,7 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit) {
     credentials: "include",
   });
   if (!refreshRes.ok) {
-    try {
-      window.localStorage.removeItem(TOKEN_KEY);
-    } catch (e) {}
-    window.dispatchEvent(new CustomEvent("auth:logout"));
+    forceAuthLogout();
     return res;
   }
 
@@ -43,10 +56,7 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit) {
     });
   }
 
-  try {
-    window.localStorage.removeItem(TOKEN_KEY);
-  } catch (e) {}
-  window.dispatchEvent(new CustomEvent("auth:logout"));
+  forceAuthLogout();
   return res;
 }
 

@@ -29,19 +29,19 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "logo.svg",
+            src: "logo.svg?v=2026-10-07",
             sizes: "192x192",
             type: "image/svg+xml",
             purpose: "any",
           },
           {
-            src: "logo.svg",
+            src: "logo.svg?v=2026-10-07",
             sizes: "512x512",
             type: "image/svg+xml",
             purpose: "any",
           },
           {
-            src: "logo.svg",
+            src: "logo.svg?v=2026-10-07",
             sizes: "512x512",
             type: "image/svg+xml",
             purpose: "maskable",

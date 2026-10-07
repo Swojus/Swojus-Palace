@@ -84,15 +84,17 @@ export function EventCard({
       style={{
         border: isInventoryCard
           ? isHovered
-            ? "1px solid rgba(99, 102, 241, 0.3)"
-            : "1px solid rgba(99, 102, 241, 0.22)"
-          : undefined,
+            ? "1px solid rgba(212,160,23,0.35)"
+            : "1px solid rgba(212,160,23,0.22)"
+          : "1px solid rgba(203, 213, 225, 0.9)",
         boxShadow: isInventoryCard
           ? isHovered
-            ? "0 0 0 1px rgba(180, 35, 24, 0.08), 0 10px 24px rgba(29, 78, 216, 0.12)"
-            : "0 0 0 1px rgba(99, 102, 241, 0.08), 0 7px 20px rgba(39, 48, 66, 0.06)"
-          : undefined,
-        transition: "border-color 150ms ease, box-shadow 150ms ease",
+            ? "0 0 0 1px rgba(212,160,23,0.12), 0 14px 28px rgba(15, 23, 42, 0.1)"
+            : "0 10px 24px rgba(15, 23, 42, 0.06)"
+          : "0 10px 30px rgba(15, 23, 42, 0.06)",
+        transition:
+          "border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease",
+        transform: isHovered ? "translateY(-1px)" : "translateY(0)",
       }}
     >
       <style>{`

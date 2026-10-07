@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { getStoredNotifications } from "../../src/data/notificationLog";
 import {
   Bell,
+  BookOpenCheck,
   CalendarDays,
   MessageCircle,
   Sparkles,
@@ -14,7 +15,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import logo from "../assets/logo.svg";
+import headerLogo from "../assets/header.svg";
 
 type NavItem = {
   to: string;
@@ -24,7 +25,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/events", label: "Booked", icon: CalendarDays },
+  { to: "/events", label: "Booked", icon: BookOpenCheck },
   { to: "/enquiries", label: "Enquiries", icon: MessageCircle },
   { to: "/completed", label: "Completed", icon: Trophy },
   // { to: "/inventory", label: "Inventory", icon: LayoutGrid },
@@ -61,7 +62,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const sideMenuItems: NavItem[] = [
     { to: "/calendar", label: "Calendar", icon: CalendarDays },
-    { to: "/events", label: "Booked", icon: CalendarDays },
+    { to: "/events", label: "Booked", icon: BookOpenCheck },
     { to: "/enquiries", label: "Enquiries", icon: MessageCircle },
     { to: "/completed", label: "Completed", icon: Trophy },
     { to: "/inventory", label: "Inventory", icon: LayoutGrid },
@@ -130,8 +131,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           >
             <Menu size={20} />
           </button>
-          <h2 className="brand-pill">
-            <img src={logo} alt="Swojus Palace" className="topbar-logo" />
+          <h2 className="brand-pill brand-mark-only">
             <span>SWOJUS PALACE</span>
           </h2>
           <Link

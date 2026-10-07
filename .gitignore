@@ -1,13 +1,27 @@
-# Node
+# Node / package managers
 node_modules/
+**/node_modules/
+**/package-lock.json
 npm-debug.log
 yarn-error.log
+pnpm-debug.log
+
+# Frontend / backend environment files
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Build outputs
+/dist/
+**/dist/
+build/
+**/build/
+web-build/
 
 # Expo
 .expo/
 .expo-shared/
-dist/
-web-build/
 
 # Native
 *.orig.*

@@ -21,7 +21,12 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
     return res.status(400).json({ error: "Missing credentials" });
-  const user = await User.findOne({ email });
+
+  const identifier = String(email).trim();
+  const normalizedPhone = identifier.replace(/\D/g, "").slice(0, 10);
+  const user = await User.findOne({
+    $or: [{ email: identifier.toLowerCase() }, { phone: normalizedPhone }],
+  });
   if (!user) return res.status(401).json({ error: "Invalid credentials" });
   // Support legacy documents that may store the hash in `passwordHash`
   const storedHash = user.password || user.passwordHash;
@@ -29,6 +34,12 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ error: "Invalid credentials" });
   const ok = await bcrypt.compare(password, storedHash);
   if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+
+  const isApproved = user.roleId === 1 || user.isApproved === true;
+  if (!isApproved) {
+    return res.status(403).json({ error: "Required admin approval" });
+  }
+
   const token = makeAccessToken(user);
 
   // create refresh token and persist
@@ -57,6 +68,7 @@ router.post("/login", async (req, res) => {
       email: user.email,
       phone: user.phone,
       roleId: user.roleId,
+      isApproved: user.isApproved !== false,
       name: user.name,
     },
   });
@@ -86,6 +98,7 @@ router.post("/register", async (req, res) => {
       phone: normalizedPhone,
       password: hashed,
       roleId: 2,
+      isApproved: false,
     });
 
     const token = makeAccessToken(user);
@@ -115,6 +128,7 @@ router.post("/register", async (req, res) => {
         email: user.email,
         phone: user.phone,
         roleId: user.roleId,
+        isApproved: user.isApproved !== false,
         name: user.name,
       },
     });
@@ -142,6 +156,7 @@ router.post("/refresh", async (req, res) => {
       id: user._id,
       email: user.email,
       roleId: user.roleId,
+      isApproved: user.isApproved !== false,
       name: user.name,
     },
   });
@@ -171,6 +186,7 @@ router.get("/me", async (req, res) => {
       email: user.email,
       phone: user.phone,
       roleId: user.roleId,
+      isApproved: user.isApproved !== false,
       name: user.name,
     });
   } catch (e) {

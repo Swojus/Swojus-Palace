@@ -23,6 +23,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [password, setPassword] = React.useState("");
   const [loginError, setLoginError] = React.useState<string | null>(null);
   const [signUpError, setSignUpError] = React.useState<string | null>(null);
+  const [signUpSuccess, setSignUpSuccess] = React.useState<string | null>(null);
   const [showSignUp, setShowSignUp] = React.useState(false);
   const [signUpData, setSignUpData] = React.useState({
     name: "",
@@ -115,9 +116,17 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error || "Registration failed");
         }
-        // auto-login using existing login flow
-        await login(signUpData.email, signUpData.password);
-        onLogin();
+        setSignUpSuccess(
+          "Account created successfully. Please wait for admin approval.",
+        );
+        setShowSignUp(false);
+        setSignUpData({
+          name: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+        });
       } catch (e: any) {
         setSignUpError(e.message || "Registration failed");
       }
@@ -131,7 +140,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: "background.default",
+        bgcolor: "#e7e3de",
         px: 2,
       }}
     >
@@ -140,43 +149,44 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           width: "100%",
           maxWidth: 440,
           borderRadius: 4,
-          boxShadow: "0 20px 80px rgba(0, 0, 0, 0.35)",
+          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.08)",
           overflow: "hidden",
-          bgcolor: "background.paper",
+          bgcolor: "#f4f0ea",
+          border: "1px solid rgba(145, 118, 77, 0.08)",
         }}
       >
         <Box
           sx={{
-            py: 4,
-            px: 4,
+            py: 2.4,
+            px: 3,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 1.5,
-            background:
-              "linear-gradient(180deg, rgba(212,160,59,0.14) 0%, rgba(240,198,107,0.08) 100%)",
+            gap: 0.7,
+            background: "transparent",
           }}
         >
           <Box
             component="img"
             src={logo}
             alt="App logo"
-            sx={{ width: 96, height: 96, mb: 0.75 }}
+            sx={{ width: 190, height: 190, display: "block" }}
           />
-          <Typography
-            variant="h5"
-            fontWeight={800}
-            textAlign="center"
-            sx={{ color: "text.primary" }}
-          >
-            {showSignUp ? "Create Account" : "Welcome"}
-          </Typography>
         </Box>
 
-        <CardContent sx={{ pt: 2.5, px: 4, pb: 4 }}>
+        <CardContent sx={{ pt: 0.4, px: 3, pb: 3.2 }}>
           {!showSignUp ? (
             <Box component="form" onSubmit={handleLogin}>
               <Stack spacing={2}>
+                {signUpSuccess ? (
+                  <Typography
+                    variant="body2"
+                    color="success.main"
+                    textAlign="center"
+                  >
+                    {signUpSuccess}
+                  </Typography>
+                ) : null}
                 <TextField
                   label="Email or Phone"
                   type="text"
@@ -190,9 +200,29 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <User size={18} />
+                        <User size={18} color="#7a6658" />
                       </InputAdornment>
                     ),
+                    sx: {
+                      fontSize: "1.05rem",
+                      color: "#2e2a26",
+                      borderBottom: "1px solid rgba(100, 80, 60, 0.42)",
+                      pb: 0.5,
+                    },
+                  }}
+                  sx={{
+                    "& .MuiInputLabel-root": {
+                      color: "#5d5149",
+                      fontSize: "1.05rem",
+                      fontWeight: 500,
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#ad7f1f",
+                    },
+                    "& .MuiInputBase-input::placeholder": {
+                      color: "#8d8178",
+                      opacity: 1,
+                    },
                   }}
                 />
                 <TextField
@@ -206,9 +236,29 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
-                        <Lock size={18} />
+                        <Lock size={18} color="#7a6658" />
                       </InputAdornment>
                     ),
+                    sx: {
+                      fontSize: "1.05rem",
+                      color: "#2e2a26",
+                      borderBottom: "1px solid rgba(100, 80, 60, 0.42)",
+                      pb: 0.5,
+                    },
+                  }}
+                  sx={{
+                    "& .MuiInputLabel-root": {
+                      color: "#5d5149",
+                      fontSize: "1.05rem",
+                      fontWeight: 500,
+                    },
+                    "& .MuiInputLabel-root.Mui-focused": {
+                      color: "#ad7f1f",
+                    },
+                    "& .MuiInputBase-input::placeholder": {
+                      color: "#8d8178",
+                      opacity: 1,
+                    },
                   }}
                 />
                 <Button
@@ -216,7 +266,18 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   variant="contained"
                   color="primary"
                   fullWidth
-                  sx={{ py: 1.3, fontWeight: 700, borderRadius: 3 }}
+                  sx={{
+                    py: 1.4,
+                    fontWeight: 800,
+                    borderRadius: 3,
+                    background:
+                      "linear-gradient(135deg, #be8d25 0%, #d7a63d 100%)",
+                    color: "#fff",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    boxShadow: "0 8px 18px rgba(180, 130, 30, 0.18)",
+                    fontSize: "1.05rem",
+                  }}
                 >
                   Sign In
                 </Button>
@@ -231,7 +292,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                     type="button"
                     variant="body2"
                     sx={{ fontWeight: 700 }}
-                    onClick={() => setShowSignUp(true)}
+                    onClick={() => {
+                      setSignUpSuccess(null);
+                      setShowSignUp(true);
+                    }}
                   >
                     Sign Up
                   </Link>
@@ -265,9 +329,29 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <User size={18} />
+                            <User size={18} color="#7a6658" />
                           </InputAdornment>
                         ),
+                        sx: {
+                          fontSize: "1.05rem",
+                          color: "#2e2a26",
+                          borderBottom: "1px solid rgba(100, 80, 60, 0.42)",
+                          pb: 0.5,
+                        },
+                      }}
+                      sx={{
+                        "& .MuiInputLabel-root": {
+                          color: "#5d5149",
+                          fontSize: "1.05rem",
+                          fontWeight: 500,
+                        },
+                        "& .MuiInputLabel-root.Mui-focused": {
+                          color: "#ad7f1f",
+                        },
+                        "& .MuiInputBase-input::placeholder": {
+                          color: "#8d8178",
+                          opacity: 1,
+                        },
                       }}
                     />
                     <TextField
@@ -283,9 +367,29 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <Mail size={18} />
+                            <Mail size={18} color="#7a6658" />
                           </InputAdornment>
                         ),
+                        sx: {
+                          fontSize: "1.05rem",
+                          color: "#2e2a26",
+                          borderBottom: "1px solid rgba(100, 80, 60, 0.42)",
+                          pb: 0.5,
+                        },
+                      }}
+                      sx={{
+                        "& .MuiInputLabel-root": {
+                          color: "#5d5149",
+                          fontSize: "1.05rem",
+                          fontWeight: 500,
+                        },
+                        "& .MuiInputLabel-root.Mui-focused": {
+                          color: "#ad7f1f",
+                        },
+                        "& .MuiInputBase-input::placeholder": {
+                          color: "#8d8178",
+                          opacity: 1,
+                        },
                       }}
                     />
                     <TextField
@@ -309,9 +413,29 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <Phone size={18} />
+                            <Phone size={18} color="#7a6658" />
                           </InputAdornment>
                         ),
+                        sx: {
+                          fontSize: "1.05rem",
+                          color: "#2e2a26",
+                          borderBottom: "1px solid rgba(100, 80, 60, 0.42)",
+                          pb: 0.5,
+                        },
+                      }}
+                      sx={{
+                        "& .MuiInputLabel-root": {
+                          color: "#5d5149",
+                          fontSize: "1.05rem",
+                          fontWeight: 500,
+                        },
+                        "& .MuiInputLabel-root.Mui-focused": {
+                          color: "#ad7f1f",
+                        },
+                        "& .MuiInputBase-input::placeholder": {
+                          color: "#8d8178",
+                          opacity: 1,
+                        },
                       }}
                     />
                     <TextField
@@ -330,9 +454,29 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <Lock size={18} />
+                            <Lock size={18} color="#7a6658" />
                           </InputAdornment>
                         ),
+                        sx: {
+                          fontSize: "1.05rem",
+                          color: "#2e2a26",
+                          borderBottom: "1px solid rgba(100, 80, 60, 0.42)",
+                          pb: 0.5,
+                        },
+                      }}
+                      sx={{
+                        "& .MuiInputLabel-root": {
+                          color: "#5d5149",
+                          fontSize: "1.05rem",
+                          fontWeight: 500,
+                        },
+                        "& .MuiInputLabel-root.Mui-focused": {
+                          color: "#ad7f1f",
+                        },
+                        "& .MuiInputBase-input::placeholder": {
+                          color: "#8d8178",
+                          opacity: 1,
+                        },
                       }}
                     />
                     <TextField
@@ -351,9 +495,29 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       InputProps={{
                         startAdornment: (
                           <InputAdornment position="start">
-                            <Lock size={18} />
+                            <Lock size={18} color="#7a6658" />
                           </InputAdornment>
                         ),
+                        sx: {
+                          fontSize: "1.05rem",
+                          color: "#2e2a26",
+                          borderBottom: "1px solid rgba(100, 80, 60, 0.42)",
+                          pb: 0.5,
+                        },
+                      }}
+                      sx={{
+                        "& .MuiInputLabel-root": {
+                          color: "#5d5149",
+                          fontSize: "1.05rem",
+                          fontWeight: 500,
+                        },
+                        "& .MuiInputLabel-root.Mui-focused": {
+                          color: "#ad7f1f",
+                        },
+                        "& .MuiInputBase-input::placeholder": {
+                          color: "#8d8178",
+                          opacity: 1,
+                        },
                       }}
                     />
                     <Stack direction="row" alignItems="center" spacing={1}>
@@ -367,7 +531,18 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       variant="contained"
                       color="primary"
                       fullWidth
-                      sx={{ py: 1.3, fontWeight: 700, borderRadius: 3 }}
+                      sx={{
+                        py: 1.4,
+                        fontWeight: 800,
+                        borderRadius: 3,
+                        background:
+                          "linear-gradient(135deg, #be8d25 0%, #d7a63d 100%)",
+                        color: "#fff",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        boxShadow: "0 8px 18px rgba(180, 130, 30, 0.18)",
+                        fontSize: "1.02rem",
+                      }}
                     >
                       Create Account
                     </Button>

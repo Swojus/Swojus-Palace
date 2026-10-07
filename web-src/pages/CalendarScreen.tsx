@@ -255,29 +255,44 @@ export function CalendarScreen() {
   return (
     <Box sx={{ maxWidth: 520, mx: "auto", mt: 2, px: 1, position: "relative" }}>
       <Card
-        elevation={3}
+        elevation={0}
         sx={{
           mb: 1.5,
           borderRadius: 4,
-          boxShadow: "0 4px 24px rgba(39,48,66,0.08)",
+          background: "#f4f1ee",
+          boxShadow: "0 10px 22px rgba(39,48,66,0.08)",
+          border: "1px solid rgba(144, 130, 105, 0.08)",
         }}
       >
-        <CardContent sx={{ py: 1.5, px: 2 }}>
+        <CardContent sx={{ py: 1.8, px: 2.1 }}>
           <Stack
             direction="row"
             alignItems="center"
             justifyContent="space-between"
+            spacing={2}
           >
             <Box>
               <Typography
                 variant="h5"
                 fontWeight={800}
-                color="primary"
-                sx={{ letterSpacing: 0.5 }}
+                sx={{
+                  color: "#c9931b",
+                  letterSpacing: 0.2,
+                  lineHeight: 1.1,
+                  fontFamily: "'Sora', 'Manrope', sans-serif",
+                }}
               >
                 Calendar
               </Typography>
-              <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+              <Typography
+                color="text.secondary"
+                sx={{
+                  mt: 0.5,
+                  fontSize: "1.05rem",
+                  fontWeight: 500,
+                  color: "#475467",
+                }}
+              >
                 {format(selectedDate, "EEEE, MMM d, yyyy")}
               </Typography>
               {selectedMuhurtDescription ? (
@@ -290,239 +305,219 @@ export function CalendarScreen() {
               ) : null}
             </Box>
             <Chip
-              color="primary"
               label={`${eventsForDay.length} event${eventsForDay.length === 1 ? "" : "s"}`}
               sx={{
-                fontWeight: 700,
-                fontSize: "0.95rem",
-                px: 1.5,
-                borderRadius: 2,
+                fontWeight: 800,
+                fontSize: "0.98rem",
+                px: 1.7,
+                height: 38,
+                borderRadius: 2.2,
+                background: "linear-gradient(135deg, #d2a74d 0%, #c8941a 100%)",
+                color: "#fff",
+                boxShadow: "0 8px 18px rgba(201, 148, 26, 0.18)",
               }}
             />
           </Stack>
         </CardContent>
       </Card>
 
-      <Card elevation={1} sx={{ mb: 2, borderRadius: 4, overflow: "hidden" }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            p: 2,
-            gap: 1,
-          }}
-        >
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <IconButton
-              aria-label="Previous month"
-              size="small"
-              onClick={() => setCurrentMonth((m) => addMonths(m, -1))}
-            >
-              <ArrowLeft size={18} />
-            </IconButton>
-            <Typography variant="subtitle1" fontWeight={800}>
-              {format(currentMonth, "MMMM yyyy")}
-            </Typography>
-            <IconButton
-              aria-label="Next month"
-              size="small"
-              onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-            >
-              <ArrowRight size={18} />
-            </IconButton>
-          </Stack>
-          <Button
+      <Box
+        sx={{
+          mb: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 1,
+          px: 0.5,
+          py: 0.2,
+        }}
+      >
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <IconButton
+            aria-label="Previous month"
             size="small"
-            onClick={() => {
-              setCurrentMonth(startOfMonth(today));
-              setSelectedDate(today);
+            onClick={() => setCurrentMonth((m) => addMonths(m, -1))}
+            sx={{
+              color: "#2b2d32",
+              background: "transparent",
+              borderRadius: "50%",
+              width: 36,
+              height: 36,
             }}
-            sx={{ textTransform: "none" }}
           >
-            Today
-          </Button>
-        </Box>
-
-        <Box
+            <ArrowLeft size={22} />
+          </IconButton>
+          <Typography
+            variant="h5"
+            fontWeight={800}
+            sx={{
+              color: "#1f2937",
+              fontFamily: "'Sora', 'Manrope', sans-serif",
+              letterSpacing: 0.04,
+              fontSize: "2rem",
+            }}
+          >
+            {format(currentMonth, "MMMM yyyy")}
+          </Typography>
+          <IconButton
+            aria-label="Next month"
+            size="small"
+            onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
+            sx={{
+              color: "#2b2d32",
+              background: "transparent",
+              borderRadius: "50%",
+              width: 36,
+              height: 36,
+            }}
+          >
+            <ArrowRight size={22} />
+          </IconButton>
+        </Stack>
+        <Button
+          size="small"
+          onClick={() => {
+            setCurrentMonth(startOfMonth(today));
+            setSelectedDate(today);
+          }}
           sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-            gap: 1,
-            p: 2,
+            textTransform: "none",
+            color: "#1f2937",
+            fontWeight: 700,
+            fontSize: "0.96rem",
+            minWidth: 0,
+            px: 0.6,
           }}
         >
-          {weekDays.map((d) => (
-            <Typography
-              key={d}
-              variant="caption"
-              color="text.secondary"
-              align="center"
-              sx={{ fontWeight: 700 }}
-            >
-              {d}
-            </Typography>
-          ))}
+          Today
+        </Button>
+      </Box>
 
-          {days.map((day) => {
-            const dayKey = format(day, "yyyy-MM-dd");
-            const isMuted = !isSameMonth(day, currentMonth);
-            const isSelected = isSameDay(day, selectedDate);
-            const isToday = isSameDay(day, today);
-            const dayStart = new Date(day);
-            dayStart.setHours(0, 0, 0, 0);
-            const isPast = dayStart < todayStart;
-            const count = eventCountByDate.get(dayKey) ?? 0;
-            const muhurtDescription = muhurtByDate.get(dayKey);
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+          gap: 1,
+          p: 2,
+        }}
+      >
+        {weekDays.map((d) => (
+          <Typography
+            key={d}
+            variant="caption"
+            color="text.secondary"
+            align="center"
+            sx={{ fontWeight: 700 }}
+          >
+            {d}
+          </Typography>
+        ))}
 
-            return (
-              <Box
-                key={dayKey}
-                role="button"
-                tabIndex={0}
-                onClick={() => {
+        {days.map((day) => {
+          const dayKey = format(day, "yyyy-MM-dd");
+          const isMuted = !isSameMonth(day, currentMonth);
+          const isSelected = isSameDay(day, selectedDate);
+          const isToday = isSameDay(day, today);
+          const dayStart = new Date(day);
+          dayStart.setHours(0, 0, 0, 0);
+          const isPast = dayStart < todayStart;
+          const count = eventCountByDate.get(dayKey) ?? 0;
+          const muhurtDescription = muhurtByDate.get(dayKey);
+
+          return (
+            <Box
+              key={dayKey}
+              role="button"
+              tabIndex={0}
+              onClick={() => {
+                setSelectedDate(day);
+                if (!isSameMonth(day, currentMonth))
+                  setCurrentMonth(startOfMonth(day));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
                   setSelectedDate(day);
                   if (!isSameMonth(day, currentMonth))
                     setCurrentMonth(startOfMonth(day));
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setSelectedDate(day);
-                    if (!isSameMonth(day, currentMonth))
-                      setCurrentMonth(startOfMonth(day));
-                  }
-                }}
+                }
+              }}
+              sx={{
+                minHeight: 92,
+                overflow: "visible",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 0,
+                py: 1.25,
+                borderRadius: 2,
+                color: isMuted ? "text.disabled" : "text.primary",
+                backgroundColor: isSelected
+                  ? "primary.main"
+                  : muhurtDescription
+                    ? "rgba(244,63,94,0.08)"
+                    : isToday
+                      ? "rgba(37,99,235,0.04)"
+                      : "transparent",
+                textTransform: "none",
+                border: isSelected
+                  ? "1px solid rgba(212,160,23,0.9)"
+                  : muhurtDescription
+                    ? "1px solid rgba(244,63,94,0.25)"
+                    : isToday
+                      ? "1px solid rgba(37,99,235,0.45)"
+                      : "1px solid transparent",
+                cursor: "pointer",
+              }}
+            >
+              <Box
                 sx={{
-                  minHeight: 92,
-                  overflow: "visible",
+                  width: 32,
+                  height: 32,
+                  display: "grid",
+                  placeItems: "center",
+                  borderRadius: "50%",
+                  bgcolor: isSelected ? "primary.main" : "transparent",
+                  color: isSelected
+                    ? "primary.contrastText"
+                    : muhurtDescription
+                      ? "error.main"
+                      : isMuted
+                        ? "text.disabled"
+                        : "text.primary",
+                  fontWeight: 800,
+                  boxShadow:
+                    isToday && !isSelected
+                      ? "inset 0 0 0 1.5px rgba(37,99,235,0.7)"
+                      : "none",
+                }}
+              >
+                {format(day, "d")}
+              </Box>
+
+              <Box
+                sx={{
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
-                  justifyContent: "space-between",
-                  px: 0,
-                  py: 1.25,
-                  borderRadius: 2,
-                  color: isMuted ? "text.disabled" : "text.primary",
-                  backgroundColor: isSelected
-                    ? "rgba(59,130,246,0.12)"
-                    : muhurtDescription
-                      ? "rgba(244,63,94,0.08)"
-                      : isToday
-                        ? "rgba(15,23,42,0.04)"
-                        : "transparent",
-                  textTransform: "none",
-                  border: isSelected
-                    ? "1px solid rgba(59,130,246,0.25)"
-                    : muhurtDescription
-                      ? "1px solid rgba(244,63,94,0.25)"
-                      : isToday
-                        ? "1px solid rgba(15,23,42,0.08)"
-                        : "1px solid transparent",
-                  cursor: "pointer",
+                  gap: 0.5,
+                  width: "100%",
                 }}
               >
-                <Box
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    display: "grid",
-                    placeItems: "center",
-                    borderRadius: "50%",
-                    bgcolor: isSelected ? "primary.main" : "transparent",
-                    color: isSelected
-                      ? "primary.contrastText"
-                      : muhurtDescription
-                        ? "error.main"
-                        : isMuted
-                          ? "text.disabled"
-                          : "text.primary",
-                    fontWeight: 800,
-                  }}
-                >
-                  {format(day, "d")}
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 0.5,
-                    width: "100%",
-                  }}
-                >
-                  {muhurtDescription ? (
-                    count === 0 ? (
-                      <Box
-                        sx={{
-                          width: "100%",
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 0.5,
-                          minWidth: 0,
-                        }}
-                      >
-                        <Typography
-                          variant="caption"
-                          align="center"
-                          sx={{
-                            color: "error.main",
-                            fontWeight: 700,
-                            lineHeight: 1.1,
-                            display: "-webkit-box",
-                            WebkitLineClamp: 3,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            width: "100%",
-                            whiteSpace: "normal",
-                            overflowWrap: "anywhere",
-                            wordBreak: "break-word",
-                            textAlign: "center",
-                          }}
-                        >
-                          {muhurtDescription}
-                        </Typography>
-                        {!isPast && (
-                          <Box
-                            role="button"
-                            tabIndex={0}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/events/new?date=${dayKey}`);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.stopPropagation();
-                                navigate(`/events/new?date=${dayKey}`);
-                              }
-                            }}
-                            aria-label={`Add event for ${format(day, "MMM d, yyyy")}`}
-                            sx={{
-                              width: 26,
-                              height: 26,
-                              borderRadius: "50%",
-                              display: "grid",
-                              placeItems: "center",
-                              bgcolor: "transparent",
-                              color: isMuted ? "text.disabled" : "text.primary",
-                              fontSize: "0.85rem",
-                              border: "1px solid rgba(0,0,0,0.06)",
-                              zIndex: 1200,
-                              position: "relative",
-                              pointerEvents: "auto",
-                              cursor: "pointer",
-                              "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
-                            }}
-                          >
-                            +
-                          </Box>
-                        )}
-                      </Box>
-                    ) : (
+                {muhurtDescription ? (
+                  count === 0 ? (
+                    <Box
+                      sx={{
+                        width: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 0.5,
+                        minWidth: 0,
+                      }}
+                    >
                       <Typography
                         variant="caption"
                         align="center"
@@ -531,64 +526,121 @@ export function CalendarScreen() {
                           fontWeight: 700,
                           lineHeight: 1.1,
                           display: "-webkit-box",
-                          WebkitLineClamp: 2,
+                          WebkitLineClamp: 3,
                           WebkitBoxOrient: "vertical",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
-                          maxWidth: "100%",
+                          width: "100%",
+                          whiteSpace: "normal",
+                          overflowWrap: "anywhere",
                           wordBreak: "break-word",
                           textAlign: "center",
                         }}
                       >
                         {muhurtDescription}
                       </Typography>
-                    )
-                  ) : count > 0 ? (
-                    <Box
-                      sx={{
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        display: "grid",
-                        placeItems: "center",
-                        bgcolor: isSelected ? "#ffffff" : "primary.main",
-                        color: isSelected
-                          ? "primary.main"
-                          : "primary.contrastText",
-                        fontSize: "0.72rem",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {count}
+                      {!isPast && (
+                        <Box
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/events/new?date=${dayKey}`);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.stopPropagation();
+                              navigate(`/events/new?date=${dayKey}`);
+                            }
+                          }}
+                          aria-label={`Add event for ${format(day, "MMM d, yyyy")}`}
+                          sx={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: "50%",
+                            display: "grid",
+                            placeItems: "center",
+                            bgcolor: "transparent",
+                            color: isMuted ? "text.disabled" : "text.primary",
+                            fontSize: "0.85rem",
+                            border: "1px solid rgba(0,0,0,0.06)",
+                            zIndex: 1200,
+                            position: "relative",
+                            pointerEvents: "auto",
+                            cursor: "pointer",
+                            "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
+                          }}
+                        >
+                          +
+                        </Box>
+                      )}
                     </Box>
-                  ) : !isPast ? (
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/events/new?date=${dayKey}`);
-                      }}
-                      aria-label={`Add event for ${format(day, "MMM d, yyyy")}`}
+                  ) : (
+                    <Typography
+                      variant="caption"
+                      align="center"
                       sx={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: "50%",
-                        bgcolor: "transparent",
-                        color: isMuted ? "text.disabled" : "text.primary",
-                        fontSize: "0.85rem",
-                        border: "1px solid rgba(0,0,0,0.06)",
-                        "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
+                        color: "error.main",
+                        fontWeight: 700,
+                        lineHeight: 1.1,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: "100%",
+                        wordBreak: "break-word",
+                        textAlign: "center",
                       }}
                     >
-                      +
-                    </IconButton>
-                  ) : null}
-                </Box>
+                      {muhurtDescription}
+                    </Typography>
+                  )
+                ) : count > 0 ? (
+                  <Box
+                    sx={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      display: "grid",
+                      placeItems: "center",
+                      bgcolor: isSelected ? "#ffffff" : "primary.main",
+                      color: isSelected
+                        ? "primary.main"
+                        : "primary.contrastText",
+                      fontSize: "0.72rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {count}
+                  </Box>
+                ) : !isPast ? (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/events/new?date=${dayKey}`);
+                    }}
+                    aria-label={`Add event for ${format(day, "MMM d, yyyy")}`}
+                    sx={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: "50%",
+                      bgcolor: "transparent",
+                      color: isMuted ? "text.disabled" : "text.primary",
+                      fontSize: "0.85rem",
+                      border: "1px solid rgba(0,0,0,0.06)",
+                      "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
+                    }}
+                  >
+                    +
+                  </IconButton>
+                ) : null}
               </Box>
-            );
-          })}
-        </Box>
-      </Card>
+            </Box>
+          );
+        })}
+      </Box>
 
       <Box
         sx={{

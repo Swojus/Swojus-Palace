@@ -19,6 +19,7 @@ async function seed() {
     email,
     password: hash,
     roleId: 1,
+    isApproved: true,
     name: "Admin",
   });
   console.log("Seeded admin:", admin.email);
