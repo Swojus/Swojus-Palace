@@ -101,17 +101,20 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     setSignUpError(null);
     (async () => {
       try {
-        const res = await fetch(`/api/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            name: signUpData.name,
-            email: signUpData.email,
-            phone: sanitizePhone(signUpData.phone),
-            password: signUpData.password,
-          }),
-        });
+        const res = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/auth/register`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              name: signUpData.name,
+              email: signUpData.email,
+              phone: sanitizePhone(signUpData.phone),
+              password: signUpData.password,
+            }),
+          },
+        );
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
           throw new Error(err.error || "Registration failed");

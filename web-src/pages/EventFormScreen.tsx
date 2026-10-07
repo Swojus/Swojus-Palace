@@ -819,7 +819,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                   new Set([...formData.rooms, ...phase1Rooms]),
                                 )
                               : formData.rooms.filter(
-                                  (r) => !phase1Rooms.includes(r),
+                                  (r: string) => !phase1Rooms.includes(r),
                                 ),
                           );
                         }}
@@ -849,7 +849,9 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                 "rooms",
                                 checked
                                   ? [...formData.rooms, room]
-                                  : formData.rooms.filter((r) => r !== room),
+                                  : formData.rooms.filter(
+                                      (r: string) => r !== room,
+                                    ),
                               );
                             }}
                             size="small"
@@ -883,7 +885,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                   new Set([...formData.rooms, ...phase2Rooms]),
                                 )
                               : formData.rooms.filter(
-                                  (r) => !phase2Rooms.includes(r),
+                                  (r: string) => !phase2Rooms.includes(r),
                                 ),
                           );
                         }}
@@ -913,7 +915,9 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                 "rooms",
                                 checked
                                   ? [...formData.rooms, room]
-                                  : formData.rooms.filter((r) => r !== room),
+                                  : formData.rooms.filter(
+                                      (r: string) => r !== room,
+                                    ),
                               );
                             }}
                             size="small"
@@ -947,7 +951,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                   new Set([...formData.rooms, ...othersRooms]),
                                 )
                               : formData.rooms.filter(
-                                  (r) => !othersRooms.includes(r),
+                                  (r: string) => !othersRooms.includes(r),
                                 ),
                           );
                         }}
@@ -979,7 +983,9 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                 "rooms",
                                 checked
                                   ? [...formData.rooms, room]
-                                  : formData.rooms.filter((r) => r !== room),
+                                  : formData.rooms.filter(
+                                      (r: string) => r !== room,
+                                    ),
                               );
                             }}
                             size="small"

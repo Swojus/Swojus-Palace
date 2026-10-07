@@ -1,3 +1,11 @@
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+
+export function toApiUrl(input: string) {
+  if (!input.startsWith("/api")) return input;
+  if (!API_BASE) return input;
+  return `${API_BASE}${input}`;
+}
+
 export async function apiFetch(input: RequestInfo, init?: RequestInit) {
   const TOKEN_KEY = "eventflow/token";
   const raw = window.localStorage.getItem(TOKEN_KEY);
@@ -19,10 +27,11 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit) {
     }
   };
 
+  const requestUrl = typeof input === "string" ? toApiUrl(input) : input;
   const headers = new Headers(init && init.headers ? init.headers : undefined);
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(input, {
+  const res = await fetch(requestUrl, {
     ...(init || {}),
     headers,
     credentials: init?.credentials ?? "include",
@@ -30,7 +39,7 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit) {
   if (res.status !== 401) return res;
 
   // try refresh
-  const refreshRes = await fetch("/api/auth/refresh", {
+  const refreshRes = await fetch(toApiUrl("/api/auth/refresh"), {
     method: "POST",
     credentials: "include",
   });
@@ -49,7 +58,7 @@ export async function apiFetch(input: RequestInfo, init?: RequestInit) {
       init && init.headers ? init.headers : undefined,
     );
     headers2.set("Authorization", `Bearer ${body.token}`);
-    return fetch(input, {
+    return fetch(requestUrl, {
       ...(init || {}),
       headers: headers2,
       credentials: init?.credentials ?? "include",
