@@ -1,5 +1,14 @@
 import React from "react";
-import { ArrowLeft, Mail, Lock, Phone, User, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  Mail,
+  Lock,
+  Phone,
+  User,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,6 +19,7 @@ import {
   Button,
   InputAdornment,
   Link,
+  IconButton,
 } from "@mui/material";
 import logo from "../assets/logo.svg";
 import { useAuth } from "../AuthContext";
@@ -25,6 +35,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [signUpError, setSignUpError] = React.useState<string | null>(null);
   const [signUpSuccess, setSignUpSuccess] = React.useState<string | null>(null);
   const [showSignUp, setShowSignUp] = React.useState(false);
+  const [showLoginPassword, setShowLoginPassword] = React.useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   const [signUpData, setSignUpData] = React.useState({
     name: "",
     email: "",
@@ -230,7 +243,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 />
                 <TextField
                   label="Password"
-                  type="password"
+                  type={showLoginPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
@@ -240,6 +253,26 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                     startAdornment: (
                       <InputAdornment position="start">
                         <Lock size={18} color="#7a6658" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label={
+                            showLoginPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                          onClick={() => setShowLoginPassword((prev) => !prev)}
+                          edge="end"
+                          sx={{ color: "#7a6658" }}
+                        >
+                          {showLoginPassword ? (
+                            <EyeOff size={18} />
+                          ) : (
+                            <Eye size={18} />
+                          )}
+                        </IconButton>
                       </InputAdornment>
                     ),
                     sx: {
@@ -443,7 +476,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                     />
                     <TextField
                       label="Password"
-                      type="password"
+                      type={showSignUpPassword ? "text" : "password"}
                       value={signUpData.password}
                       onChange={(e) =>
                         setSignUpData({
@@ -458,6 +491,28 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                         startAdornment: (
                           <InputAdornment position="start">
                             <Lock size={18} color="#7a6658" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label={
+                                showSignUpPassword
+                                  ? "Hide password"
+                                  : "Show password"
+                              }
+                              onClick={() =>
+                                setShowSignUpPassword((prev) => !prev)
+                              }
+                              edge="end"
+                              sx={{ color: "#7a6658" }}
+                            >
+                              {showSignUpPassword ? (
+                                <EyeOff size={18} />
+                              ) : (
+                                <Eye size={18} />
+                              )}
+                            </IconButton>
                           </InputAdornment>
                         ),
                         sx: {
@@ -484,7 +539,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                     />
                     <TextField
                       label="Confirm Password"
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       value={signUpData.confirmPassword}
                       onChange={(e) =>
                         setSignUpData({
@@ -499,6 +554,28 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                         startAdornment: (
                           <InputAdornment position="start">
                             <Lock size={18} color="#7a6658" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label={
+                                showConfirmPassword
+                                  ? "Hide password"
+                                  : "Show password"
+                              }
+                              onClick={() =>
+                                setShowConfirmPassword((prev) => !prev)
+                              }
+                              edge="end"
+                              sx={{ color: "#7a6658" }}
+                            >
+                              {showConfirmPassword ? (
+                                <EyeOff size={18} />
+                              ) : (
+                                <Eye size={18} />
+                              )}
+                            </IconButton>
                           </InputAdornment>
                         ),
                         sx: {

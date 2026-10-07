@@ -662,7 +662,7 @@
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 100;
+  z-index: 2000;
   border-bottom: 1px solid rgba(212, 160, 23, 0.35);
   border-radius: 0 0 1.15rem 1.15rem;
 }

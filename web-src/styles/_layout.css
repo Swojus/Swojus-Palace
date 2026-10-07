@@ -35,10 +35,12 @@ html {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.02);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, #f4f3f1 0%, #eeefee 100%);
   backdrop-filter: blur(2px);
   padding-top: 74px;
-  padding-bottom: 82px;
+  padding-bottom: 0;
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
@@ -47,12 +49,14 @@ html {
 }
 
 .content {
+  position: relative;
+  z-index: 1;
   flex: 1 1 auto;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  background: linear-gradient(180deg, #f4f3f1 0%, #eeefee 100%);
-  padding: 0.9rem 0.9rem 1.4rem;
+  background: transparent;
+  padding: 0.9rem 0.9rem 5rem;
 }
 
 .stack {
