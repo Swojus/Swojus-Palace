@@ -1,7 +1,7 @@
 import React from "react";
 import { isRecordCompleted, sortRecordsByDateTime } from "../../src/data/mock";
 import apiFetch from "../utils/api";
-import { EventCard, DateRangeFilter } from "../components";
+import { EventCard, DateRangeFilter, LoadingState } from "../components";
 import { CheckCircle2 } from "lucide-react";
 import { Card, CardContent, Typography, Stack, Box, Chip } from "@mui/material";
 import SearchFilter from "../components/SearchFilter";
@@ -110,13 +110,7 @@ export function CompletedEventsScreen() {
       </Box>
 
       {showLoader ? (
-        <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
-          <CardContent>
-            <Typography color="text.secondary" align="center">
-              Loading completed events...
-            </Typography>
-          </CardContent>
-        </Card>
+        <LoadingState message="Loading completed events..." minHeight={120} />
       ) : showEmptyState ? (
         <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
           <CardContent>

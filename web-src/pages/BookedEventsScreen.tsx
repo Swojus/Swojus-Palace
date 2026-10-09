@@ -1,7 +1,7 @@
 import React from "react";
 import { isRecordCompleted, sortRecordsByDateTime } from "../../src/data/mock";
 import apiFetch from "../utils/api";
-import { EventCard, DateRangeFilter } from "../components";
+import { EventCard, DateRangeFilter, LoadingState } from "../components";
 import { useAuth } from "../AuthContext";
 import { CalendarDays, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -181,13 +181,7 @@ export function BookedEventsScreen() {
       </Box>
 
       {showLoader ? (
-        <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
-          <CardContent>
-            <Typography color="text.secondary" align="center">
-              Loading events...
-            </Typography>
-          </CardContent>
-        </Card>
+        <LoadingState message="Loading booked events..." minHeight={120} />
       ) : showEmptyState ? (
         <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
           <CardContent>

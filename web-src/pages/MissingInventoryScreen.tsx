@@ -17,6 +17,7 @@ import {
   IconButton,
   Chip,
 } from "@mui/material";
+import { LoadingState } from "../components";
 
 type InventoryStatus = "not-issued" | "checked" | "missing";
 
@@ -30,14 +31,17 @@ export function MissingInventoryScreen() {
   const navigate = useNavigate();
   const { eventId } = useParams();
   const [event, setEvent] = React.useState<RecordItem | null>(null);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     if (!eventId) {
       setEvent(null);
+      setLoading(false);
       return;
     }
 
     let mounted = true;
+    setLoading(true);
     void apiFetch(`/api/events/${eventId}`, { method: "GET" })
       .then((res) => {
         if (!res.ok) throw new Error("Event not found");
@@ -49,12 +53,23 @@ export function MissingInventoryScreen() {
       })
       .catch(() => {
         if (mounted) setEvent(null);
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
       });
 
     return () => {
       mounted = false;
     };
   }, [eventId]);
+
+  if (loading) {
+    return (
+      <Box sx={{ maxWidth: 700, mx: "auto", mt: 4, px: 2 }}>
+        <LoadingState message="Loading inventory details..." minHeight={140} />
+      </Box>
+    );
+  }
 
   if (!event) {
     return (

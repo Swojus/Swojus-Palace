@@ -14,6 +14,7 @@ import {
   Button,
 } from "@mui/material";
 import SearchFilter from "../components/SearchFilter";
+import { LoadingState } from "../components";
 
 export function InventoryOverviewScreen() {
   const navigate = useNavigate();
@@ -68,6 +69,8 @@ export function InventoryOverviewScreen() {
       };
     })
     .filter((record) => record.total > 0);
+
+  const showLoader = loading && events.length === 0;
 
   const filteredEvents = missingByEvent.filter((event) => {
     const q = search.toLowerCase();
@@ -175,7 +178,12 @@ export function InventoryOverviewScreen() {
       </Box>
 
       <Stack spacing={1.25}>
-        {filteredEvents.length === 0 ? (
+        {showLoader ? (
+          <LoadingState
+            message="Loading inventory details..."
+            minHeight={120}
+          />
+        ) : filteredEvents.length === 0 ? (
           <Card
             elevation={0}
             sx={{

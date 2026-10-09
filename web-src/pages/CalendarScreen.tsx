@@ -16,7 +16,7 @@ import {
   sortRecordsByDateTime,
   isRecordCompleted,
 } from "../../src/data/mock";
-import { EventCard } from "../components";
+import { EventCard, LoadingState } from "../components";
 import { useAuth } from "../AuthContext";
 import { useMuhurt } from "../MuhurtContext";
 import apiFetch from "../utils/api";
@@ -56,18 +56,23 @@ export function CalendarScreen() {
     startOfMonth(new Date()),
   );
   const [events, setEvents] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const { muhurtDates } = useMuhurt();
   const { isAdmin } = useAuth();
 
   React.useEffect(() => {
     let mounted = true;
+    setLoading(true);
     void apiFetch(`/api/events`, { method: "GET" })
       .then((res) => res.json())
       .then((data) => {
         if (!mounted) return;
         setEvents(Array.isArray(data) ? data : []);
       })
-      .catch(() => setEvents([]));
+      .catch(() => setEvents([]))
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
 
     return () => {
       mounted = false;
@@ -78,6 +83,7 @@ export function CalendarScreen() {
   const eventsForDay = sortRecordsByDateTime(
     events.filter((record) => record.eventDate === selectedDateKey),
   );
+  const showDateLoading = loading && eventsForDay.length === 0;
 
   const days = getCalendarDays(currentMonth);
   const today = new Date();
@@ -738,7 +744,9 @@ export function CalendarScreen() {
         </Typography>
       </Box>
 
-      {eventsForDay.length === 0 ? (
+      {showDateLoading ? (
+        <LoadingState message="Loading calendar events..." minHeight={120} />
+      ) : eventsForDay.length === 0 ? (
         <Card elevation={1} sx={{ borderRadius: 4, py: 4 }}>
           <CardContent
             sx={{

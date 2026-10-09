@@ -4,3 +4,4 @@ export * from "./EnquiryCard";
 export * from "./EventCard";
 export * from "./InstallPrompt";
 export * from "./InventoryTable";
+export * from "./LoadingState";
