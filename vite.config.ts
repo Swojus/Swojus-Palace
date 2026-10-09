@@ -28,8 +28,8 @@ export default defineConfig({
         short_name: "Swojus Palace",
         description:
           "Event management dashboard for Swojus Palace with offline support.",
-        theme_color: "#16665F",
-        background_color: "#ffffff",
+        theme_color: "#f5efe9",
+        background_color: "#f5efe9",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
