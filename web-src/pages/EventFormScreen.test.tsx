@@ -53,6 +53,23 @@ describe("EventFormScreen", () => {
     } as any);
   });
 
+  it("defaults a new event form to Enquiry source", () => {
+    render(
+      <MemoryRouter initialEntries={["/events?date=2025-07-15"]}>
+        <EventFormScreen />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: /enquiry/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: /booking/i })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
   it("allows creating another booking on a date that already has an event and shows a note", async () => {
     render(
       <MemoryRouter initialEntries={["/events?date=2025-07-15"]}>

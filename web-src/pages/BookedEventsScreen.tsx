@@ -71,8 +71,8 @@ export function BookedEventsScreen() {
   const [events, setEvents] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
 
-  const filteredEvents = sortRecordsByDateTime(
-    events.filter((record) => {
+  const filteredEvents = [...events]
+    .filter((record) => {
       if (record.eventSource !== "Booking") return false;
       if (isRecordCompleted(record)) return false;
       if (record.eventDate) {
@@ -92,8 +92,27 @@ export function BookedEventsScreen() {
       const haystack =
         `${record.customerName ?? ""} ${record.title} ${record.venue}`.toLowerCase();
       return haystack.includes(search.toLowerCase());
-    }),
-  );
+    })
+    .sort((a, b) => {
+      const todayKey = toLocalIsoDate(new Date());
+      const aDateKey = (a.eventDate ?? "").slice(0, 10);
+      const bDateKey = (b.eventDate ?? "").slice(0, 10);
+      const aIsToday = aDateKey === todayKey;
+      const bIsToday = bDateKey === todayKey;
+
+      if (aIsToday !== bIsToday) {
+        return Number(bIsToday) - Number(aIsToday);
+      }
+
+      const aTimestamp = a.eventDate
+        ? new Date(`${a.eventDate}T${a.eventTime ?? "00:00"}`).getTime()
+        : Number.POSITIVE_INFINITY;
+      const bTimestamp = b.eventDate
+        ? new Date(`${b.eventDate}T${b.eventTime ?? "00:00"}`).getTime()
+        : Number.POSITIVE_INFINITY;
+
+      return aTimestamp - bTimestamp;
+    });
 
   const showLoader = loading && events.length === 0;
   const showEmptyState = !loading && filteredEvents.length === 0;

@@ -96,7 +96,8 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
     eventType: sourceRecord?.eventType || "",
     venue: sourceRecord?.venue || "",
     rooms: sourceRecord?.rooms || [],
-    eventSource: existingEvent?.eventSource || "Booking",
+    eventSource:
+      existingEvent?.eventSource || sourceRecord?.eventSource || "Enquiry",
     confirmed: (sourceRecord as any)?.confirmed || false,
     eventDate: sourceRecord?.eventDate || dateParam || "",
     eventTime: sourceRecord?.eventTime || "",
@@ -111,7 +112,10 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
       eventType: sourceRecord?.eventType || "",
       venue: sourceRecord?.venue || "",
       rooms: sourceRecord?.rooms || [],
-      eventSource: (existingEvent && existingEvent.eventSource) || "Booking",
+      eventSource:
+        (existingEvent && existingEvent.eventSource) ||
+        sourceRecord?.eventSource ||
+        "Enquiry",
       confirmed: (sourceRecord as any)?.confirmed || false,
       eventDate:
         (existingEvent && existingEvent.eventDate) ||
@@ -1000,41 +1004,45 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                         p: 0.5,
                       }}
                     >
-                      {(["Enquiry", "Booking"] as const).map((option) => (
-                        <Box
-                          key={option}
-                          onClick={() => updateField("eventSource", option)}
-                          sx={{
-                            flex: 1,
-                            textAlign: "center",
-                            py: 1,
-                            cursor: "pointer",
-                            borderRadius: 999,
-                            transition: "all 0.2s",
-                            fontWeight: 800,
-                            fontSize: "1rem",
-                            letterSpacing: 0.2,
-                            color:
-                              formData.eventSource === option
-                                ? "#fff"
-                                : "var(--text)",
-                            background:
-                              formData.eventSource === option
+                      {(["Enquiry", "Booking"] as const).map((option) => {
+                        const isSelected = formData.eventSource === option;
+
+                        return (
+                          <Box
+                            key={option}
+                            component="button"
+                            type="button"
+                            role="button"
+                            aria-pressed={isSelected}
+                            onClick={() => updateField("eventSource", option)}
+                            sx={{
+                              flex: 1,
+                              textAlign: "center",
+                              py: 1,
+                              cursor: "pointer",
+                              borderRadius: 999,
+                              transition: "all 0.2s",
+                              fontWeight: 800,
+                              fontSize: "1rem",
+                              letterSpacing: 0.2,
+                              color: isSelected ? "#fff" : "var(--text)",
+                              background: isSelected
                                 ? "linear-gradient(90deg, var(--brand), var(--brand-deep))"
                                 : "rgba(18, 8, 8, 0.06)",
-                            border:
-                              formData.eventSource === option
+                              border: isSelected
                                 ? "none"
                                 : "1px solid rgba(18, 8, 8, 0.12)",
-                            boxShadow:
-                              formData.eventSource === option
+                              boxShadow: isSelected
                                 ? "0 8px 24px rgba(212, 160, 59, 0.18)"
                                 : "none",
-                          }}
-                        >
-                          {option}
-                        </Box>
-                      ))}
+                              appearance: "none",
+                              fontFamily: "inherit",
+                            }}
+                          >
+                            {option}
+                          </Box>
+                        );
+                      })}
                     </Box>
                   </Box>
                 </Box>
