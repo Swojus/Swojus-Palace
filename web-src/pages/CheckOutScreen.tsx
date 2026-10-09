@@ -75,6 +75,13 @@ export function CheckOutScreen() {
   }, [eventId]);
 
   const inventory = event?.inventory ?? [];
+  const eventDate = event?.eventDate
+    ? new Date(`${event.eventDate}T00:00:00`)
+    : null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isFutureDateCheckout = Boolean(eventDate && eventDate > today);
+  const [checkoutError, setCheckoutError] = React.useState("");
 
   const rows = React.useMemo<CheckoutRow[]>(
     () =>
@@ -124,6 +131,13 @@ export function CheckOutScreen() {
   };
 
   const completeCheckOut = () => {
+    if (isFutureDateCheckout) {
+      setCheckoutError("Cannot complete checkout before the event date.");
+      return;
+    }
+
+    setCheckoutError("");
+
     const updatedInventory = (event.inventory ?? []).map((item: any) => ({
       ...item,
       returnedQty: returnedCounts[item.id] ?? item.returnedQty ?? 0,
@@ -205,6 +219,36 @@ export function CheckOutScreen() {
           {event.venue}
         </p>
       </article>
+
+      {isFutureDateCheckout && (
+        <div
+          className="material-card material-attention"
+          style={{
+            padding: "0.85rem 1rem",
+            borderColor: "rgba(239, 68, 68, 0.35)",
+            background: "rgba(254, 242, 242, 0.9)",
+            color: "#991b1b",
+          }}
+          role="alert"
+        >
+          Cannot complete checkout before the event date.
+        </div>
+      )}
+
+      {checkoutError && (
+        <div
+          className="material-card material-attention"
+          style={{
+            padding: "0.85rem 1rem",
+            borderColor: "rgba(239, 68, 68, 0.35)",
+            background: "rgba(254, 242, 242, 0.9)",
+            color: "#991b1b",
+          }}
+          role="alert"
+        >
+          {checkoutError}
+        </div>
+      )}
 
       {rows.map((row) => {
         const returned = returnedCounts[row.id] ?? 0;
@@ -324,9 +368,11 @@ export function CheckOutScreen() {
           width: "100%",
           maxWidth: 480,
           justifyContent: "center",
+          opacity: isFutureDateCheckout ? 0.6 : 1,
+          cursor: isFutureDateCheckout ? "not-allowed" : "pointer",
         }}
         onClick={completeCheckOut}
-        disabled={false}
+        disabled={isFutureDateCheckout}
       >
         <Check size={18} />
         Complete Check-Out

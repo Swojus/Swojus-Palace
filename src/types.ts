@@ -10,6 +10,7 @@ export type InventoryItem = {
 export type RecordSource = "Enquiry" | "Booking";
 
 export type RecordItem = {
+  _id: string;
   id: string;
   title: string;
   customerName?: string;

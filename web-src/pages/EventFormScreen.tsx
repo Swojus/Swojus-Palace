@@ -136,10 +136,6 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (hasBookingConflict) {
-      return;
-    }
-
     if (mode === "edit" && !existingEvent) {
       navigate(-1);
       return;
@@ -374,14 +370,16 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   };
 
   const isFromEnquiry = Boolean(enquiry && !existingEvent && !asEditFlag);
-  const conflictingBooking = allEvents.find(
-    (record) =>
-      record.eventSource === "Booking" &&
-      record.eventDate === formData.eventDate &&
-      (record.id ?? record._id) !== (existingEvent?.id ?? existingEvent?._id),
-  );
-  const hasBookingConflict =
-    Boolean(formData.eventDate) && Boolean(conflictingBooking);
+  const selectedDateBookings = formData.eventDate
+    ? allEvents.filter(
+        (record) =>
+          record.eventSource === "Booking" &&
+          record.eventDate === formData.eventDate &&
+          (record.id ?? record._id) !==
+            (existingEvent?.id ?? existingEvent?._id),
+      )
+    : [];
+  const hasSelectedDateBooking = selectedDateBookings.length > 0;
 
   const prefillFieldSx = isFromEnquiry
     ? {
@@ -591,62 +589,34 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                               </Typography>
                             </Box>
                           )}
-                        {hasBookingConflict && (
+                        {hasSelectedDateBooking && (
                           <Box
+                            role="status"
+                            aria-live="polite"
                             sx={{
                               mt: 1.25,
                               px: 1.5,
                               py: 1,
-                              bgcolor: "rgba(244, 67, 54, 0.12)",
+                              bgcolor: "rgba(255, 193, 7, 0.12)",
                               borderRadius: 2,
-                              border: "1px solid rgba(244, 67, 54, 0.45)",
+                              border: "1px solid rgba(255, 193, 7, 0.4)",
                               display: "flex",
                               alignItems: "flex-start",
                               gap: 1,
-                              boxShadow: "0 6px 18px rgba(244, 67, 54, 0.12)",
-                              animation:
-                                "warningPulse 0.42s ease-out, fadeInUp 0.28s ease-out",
-                              "@keyframes warningPulse": {
-                                "0%": {
-                                  transform: "scale(0.98)",
-                                  boxShadow:
-                                    "0 0 0 0 rgba(244, 67, 54, 0.24), 0 6px 18px rgba(244, 67, 54, 0.12)",
-                                },
-                                "70%": {
-                                  transform: "scale(1.01)",
-                                  boxShadow:
-                                    "0 0 0 10px rgba(244, 67, 54, 0.08), 0 6px 18px rgba(244, 67, 54, 0.12)",
-                                },
-                                "100%": {
-                                  transform: "scale(1)",
-                                  boxShadow:
-                                    "0 0 0 0 rgba(244, 67, 54, 0), 0 6px 18px rgba(244, 67, 54, 0.12)",
-                                },
-                              },
-                              "@keyframes fadeInUp": {
-                                "0%": {
-                                  opacity: 0,
-                                  transform: "translateY(4px)",
-                                },
-                                "100%": {
-                                  opacity: 1,
-                                  transform: "translateY(0)",
-                                },
-                              },
                             }}
                           >
                             <Box
                               sx={{
                                 mt: 0.15,
-                                width: 20,
-                                height: 20,
+                                width: 18,
+                                height: 18,
                                 borderRadius: "50%",
-                                bgcolor: "error.main",
+                                bgcolor: "warning.main",
                                 color: "#fff",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
-                                fontSize: "0.85rem",
+                                fontSize: "0.72rem",
                                 fontWeight: 800,
                                 flexShrink: 0,
                               }}
@@ -656,13 +626,15 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                             <Typography
                               variant="body2"
                               sx={{
-                                color: "error.main",
-                                fontWeight: 800,
+                                color: "warning.dark",
+                                fontWeight: 700,
                                 lineHeight: 1.5,
                               }}
                             >
-                              A booking already exists for this date. Choose a
-                              different date before creating another event.
+                              Note: This date already has{" "}
+                              {selectedDateBookings.length} booked event
+                              {selectedDateBookings.length === 1 ? "" : "s"}.
+                              You can still add another event.
                             </Typography>
                           </Box>
                         )}
@@ -1093,7 +1065,6 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                   color="primary"
                   type="submit"
                   startIcon={<Save size={16} />}
-                  disabled={hasBookingConflict}
                   sx={{ px: 2.25, py: 0.8 }}
                 >
                   {mode === "edit" ? "Update" : "Create"}

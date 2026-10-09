@@ -1,4 +1,5 @@
 import { mockRecords } from "../../src/data/mock";
+import type { InventoryItem, RecordItem } from "../../src/types";
 import apiFetch from "../utils/api";
 import React from "react";
 import { AlertCircle, MinusCircle, ChevronRight } from "lucide-react";
@@ -16,7 +17,7 @@ import SearchFilter from "../components/SearchFilter";
 
 export function InventoryOverviewScreen() {
   const navigate = useNavigate();
-  const [events, setEvents] = React.useState<any[]>([]);
+  const [events, setEvents] = React.useState<RecordItem[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState("");
 
@@ -39,7 +40,9 @@ export function InventoryOverviewScreen() {
     };
   }, []);
 
-  const allItems = events.flatMap((record) => record.inventory ?? []);
+  const allItems: InventoryItem[] = events.flatMap(
+    (record) => record.inventory ?? [],
+  );
   const totalMissing = allItems.reduce(
     (sum, item) => sum + Math.max(0, item.issuedQty - (item.returnedQty || 0)),
     0,
@@ -48,7 +51,7 @@ export function InventoryOverviewScreen() {
   const missingByEvent = events
     .map((record) => {
       const missing = (record.inventory ?? [])
-        .map((item) => ({
+        .map((item: InventoryItem) => ({
           name: item.name,
           qty: Math.max(0, item.issuedQty - (item.returnedQty || 0)),
         }))

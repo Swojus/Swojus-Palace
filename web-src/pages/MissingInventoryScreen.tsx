@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import type { InventoryItem, RecordItem } from "../../src/types";
 import apiFetch from "../utils/api";
 import {
   AlertCircle,
@@ -17,10 +18,18 @@ import {
   Chip,
 } from "@mui/material";
 
+type InventoryStatus = "not-issued" | "checked" | "missing";
+
+type InventoryRow = InventoryItem & {
+  missing: number;
+  status: InventoryStatus;
+  statusLabel: string;
+};
+
 export function MissingInventoryScreen() {
   const navigate = useNavigate();
   const { eventId } = useParams();
-  const [event, setEvent] = React.useState<any | null>(null);
+  const [event, setEvent] = React.useState<RecordItem | null>(null);
 
   React.useEffect(() => {
     if (!eventId) {
@@ -61,34 +70,36 @@ export function MissingInventoryScreen() {
     );
   }
 
-  const inventoryRows = (event.inventory ?? []).map((item) => {
-    const missing = Math.max(0, item.issuedQty - item.returnedQty);
+  const inventoryRows: InventoryRow[] = (event.inventory ?? []).map(
+    (item: InventoryItem) => {
+      const missing = Math.max(0, item.issuedQty - item.returnedQty);
 
-    if (item.issuedQty === 0) {
+      if (item.issuedQty === 0) {
+        return {
+          ...item,
+          missing,
+          status: "not-issued" as const,
+          statusLabel: "Not issued",
+        };
+      }
+
+      if (missing > 0) {
+        return {
+          ...item,
+          missing,
+          status: "missing" as const,
+          statusLabel: "Missing",
+        };
+      }
+
       return {
         ...item,
         missing,
-        status: "not-issued" as const,
-        statusLabel: "Not issued",
+        status: "checked" as const,
+        statusLabel: "Checked",
       };
-    }
-
-    if (missing > 0) {
-      return {
-        ...item,
-        missing,
-        status: "missing" as const,
-        statusLabel: "Missing",
-      };
-    }
-
-    return {
-      ...item,
-      missing,
-      status: "checked" as const,
-      statusLabel: "Checked",
-    };
-  });
+    },
+  );
 
   const totalMissing = inventoryRows.reduce(
     (sum, item) => sum + item.missing,
@@ -101,7 +112,16 @@ export function MissingInventoryScreen() {
     (item) => item.status === "checked",
   ).length;
 
-  const statusMeta = {
+  const statusMeta: Record<
+    InventoryStatus,
+    {
+      label: string;
+      icon: React.ReactNode;
+      tint: string;
+      border: string;
+      text: string;
+    }
+  > = {
     "not-issued": {
       label: "Not issued",
       icon: <CircleDashed size={15} />,

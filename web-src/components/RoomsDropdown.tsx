@@ -141,8 +141,7 @@ export function RoomsDropdown({ selectedRooms, onChange }: RoomsDropdownProps) {
           {open ? "▲" : "▼"}
         </span>
       </div>
-      {open && (
-        (portalNodeRef.current || (portalNodeRef.current = document.createElement("div")),
+      {open &&
         createPortal(
           <div
             style={{
@@ -161,255 +160,254 @@ export function RoomsDropdown({ selectedRooms, onChange }: RoomsDropdownProps) {
             }}
             ref={portalNodeRef as any}
           >
-          <div style={{ marginBottom: 12 }}>
-            <div
-              style={{
-                fontWeight: 600,
-                marginBottom: 6,
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <span>Phase 1 (9)</span>
-              <label
+            <div style={{ marginBottom: 12 }}>
+              <div
                 style={{
-                  display: "inline-flex",
+                  fontWeight: 600,
+                  marginBottom: 6,
+                  display: "flex",
                   alignItems: "center",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  background: "#f0f0fa",
-                  borderRadius: 8,
-                  padding: "4px 10px",
-                  fontSize: 14,
+                  gap: 12,
                 }}
               >
-                <input
-                  ref={phase1Ref}
-                  type="checkbox"
-                  checked={phase1Rooms.every((room) =>
-                    selectedRooms.includes(`Phase 1-${room}`),
-                  )}
-                  onChange={(e) => {
-                    const allRooms = phase1Rooms.map((r) => `Phase 1-${r}`);
-                    if (e.target.checked) {
-                      onChange(
-                        Array.from(new Set([...selectedRooms, ...allRooms])),
-                      );
-                    } else {
-                      onChange(
-                        selectedRooms.filter((r) => !allRooms.includes(r)),
-                      );
-                    }
-                  }}
-                  style={{ marginRight: 6 }}
-                />
-                Select All
-              </label>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {[101, 102, 103, 104, 105, 106, 107, 108, 109].map((room) => (
+                <span>Phase 1 (9)</span>
                 <label
-                  key={`p1-${room}`}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    background: "#fff",
-                    borderRadius: 8,
-                    padding: "6px 14px",
-                    marginBottom: 6,
-                    boxShadow: "0 1px 4px #ececf6",
-                    cursor: "pointer",
                     fontWeight: 500,
+                    cursor: "pointer",
+                    background: "#f0f0fa",
+                    borderRadius: 8,
+                    padding: "4px 10px",
+                    fontSize: 14,
                   }}
                 >
                   <input
+                    ref={phase1Ref}
                     type="checkbox"
-                    checked={selectedRooms.includes(`Phase 1-${room}`)}
+                    checked={phase1Rooms.every((room) =>
+                      selectedRooms.includes(`Phase 1-${room}`),
+                    )}
                     onChange={(e) => {
-                      const newRooms = e.target.checked
-                        ? [...selectedRooms, `Phase 1-${room}`]
-                        : selectedRooms.filter(
-                            (r: string) => r !== `Phase 1-${room}`,
-                          );
-                      onChange(newRooms);
+                      const allRooms = phase1Rooms.map((r) => `Phase 1-${r}`);
+                      if (e.target.checked) {
+                        onChange(
+                          Array.from(new Set([...selectedRooms, ...allRooms])),
+                        );
+                      } else {
+                        onChange(
+                          selectedRooms.filter((r) => !allRooms.includes(r)),
+                        );
+                      }
                     }}
                     style={{ marginRight: 6 }}
                   />
-                  {room}
+                  Select All
                 </label>
-              ))}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {[101, 102, 103, 104, 105, 106, 107, 108, 109].map((room) => (
+                  <label
+                    key={`p1-${room}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      background: "#fff",
+                      borderRadius: 8,
+                      padding: "6px 14px",
+                      marginBottom: 6,
+                      boxShadow: "0 1px 4px #ececf6",
+                      cursor: "pointer",
+                      fontWeight: 500,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedRooms.includes(`Phase 1-${room}`)}
+                      onChange={(e) => {
+                        const newRooms = e.target.checked
+                          ? [...selectedRooms, `Phase 1-${room}`]
+                          : selectedRooms.filter(
+                              (r: string) => r !== `Phase 1-${room}`,
+                            );
+                        onChange(newRooms);
+                      }}
+                      style={{ marginRight: 6 }}
+                    />
+                    {room}
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <div
-              style={{
-                fontWeight: 600,
-                marginBottom: 6,
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <span>Phase 2 (6)</span>
-              <label
+            <div style={{ marginBottom: 12 }}>
+              <div
                 style={{
-                  display: "inline-flex",
+                  fontWeight: 600,
+                  marginBottom: 6,
+                  display: "flex",
                   alignItems: "center",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  background: "#f0f0fa",
-                  borderRadius: 8,
-                  padding: "4px 10px",
-                  fontSize: 14,
+                  gap: 12,
                 }}
               >
-                <input
-                  ref={phase2Ref}
-                  type="checkbox"
-                  checked={phase2Rooms.every((room) =>
-                    selectedRooms.includes(`Phase 2-${room}`),
-                  )}
-                  onChange={(e) => {
-                    const allRooms = phase2Rooms.map((r) => `Phase 2-${r}`);
-                    if (e.target.checked) {
-                      onChange(
-                        Array.from(new Set([...selectedRooms, ...allRooms])),
-                      );
-                    } else {
-                      onChange(
-                        selectedRooms.filter((r) => !allRooms.includes(r)),
-                      );
-                    }
-                  }}
-                  style={{ marginRight: 6 }}
-                />
-                Select All
-              </label>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {[101, 102, 103, 104, 105, 106].map((room) => (
+                <span>Phase 2 (6)</span>
                 <label
-                  key={`p2-${room}`}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    background: "#fff",
-                    borderRadius: 8,
-                    padding: "6px 14px",
-                    marginBottom: 6,
-                    boxShadow: "0 1px 4px #ececf6",
-                    cursor: "pointer",
                     fontWeight: 500,
+                    cursor: "pointer",
+                    background: "#f0f0fa",
+                    borderRadius: 8,
+                    padding: "4px 10px",
+                    fontSize: 14,
                   }}
                 >
                   <input
+                    ref={phase2Ref}
                     type="checkbox"
-                    checked={selectedRooms.includes(`Phase 2-${room}`)}
+                    checked={phase2Rooms.every((room) =>
+                      selectedRooms.includes(`Phase 2-${room}`),
+                    )}
                     onChange={(e) => {
-                      const newRooms = e.target.checked
-                        ? [...selectedRooms, `Phase 2-${room}`]
-                        : selectedRooms.filter(
-                            (r: string) => r !== `Phase 2-${room}`,
-                          );
-                      onChange(newRooms);
+                      const allRooms = phase2Rooms.map((r) => `Phase 2-${r}`);
+                      if (e.target.checked) {
+                        onChange(
+                          Array.from(new Set([...selectedRooms, ...allRooms])),
+                        );
+                      } else {
+                        onChange(
+                          selectedRooms.filter((r) => !allRooms.includes(r)),
+                        );
+                      }
                     }}
                     style={{ marginRight: 6 }}
                   />
-                  {room}
+                  Select All
                 </label>
-              ))}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {[101, 102, 103, 104, 105, 106].map((room) => (
+                  <label
+                    key={`p2-${room}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      background: "#fff",
+                      borderRadius: 8,
+                      padding: "6px 14px",
+                      marginBottom: 6,
+                      boxShadow: "0 1px 4px #ececf6",
+                      cursor: "pointer",
+                      fontWeight: 500,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedRooms.includes(`Phase 2-${room}`)}
+                      onChange={(e) => {
+                        const newRooms = e.target.checked
+                          ? [...selectedRooms, `Phase 2-${room}`]
+                          : selectedRooms.filter(
+                              (r: string) => r !== `Phase 2-${room}`,
+                            );
+                        onChange(newRooms);
+                      }}
+                      style={{ marginRight: 6 }}
+                    />
+                    {room}
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <div
-              style={{
-                fontWeight: 600,
-                marginBottom: 6,
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <span>Others (40)</span>
-              <label
+            <div>
+              <div
                 style={{
-                  display: "inline-flex",
+                  fontWeight: 600,
+                  marginBottom: 6,
+                  display: "flex",
                   alignItems: "center",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  background: "#f0f0fa",
-                  borderRadius: 8,
-                  padding: "4px 10px",
-                  fontSize: 14,
+                  gap: 12,
                 }}
               >
-                <input
-                  ref={othersRef}
-                  type="checkbox"
-                  checked={othersRooms.every((room) =>
-                    selectedRooms.includes(`Others-${room}`),
-                  )}
-                  onChange={(e) => {
-                    const allRooms = othersRooms.map((r) => `Others-${r}`);
-                    if (e.target.checked) {
-                      onChange(
-                        Array.from(new Set([...selectedRooms, ...allRooms])),
-                      );
-                    } else {
-                      onChange(
-                        selectedRooms.filter((r) => !allRooms.includes(r)),
-                      );
-                    }
-                  }}
-                  style={{ marginRight: 6 }}
-                />
-                Select All
-              </label>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {[
-                101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 201, 202, 203,
-                204, 205, 206, 207, 208, 209, 210, 301, 302, 303, 304, 305, 306,
-                307, 308, 309, 310, 401, 402, 403, 404, 405, 406, 407, 408, 409,
-                410,
-              ].map((room) => (
+                <span>Others (40)</span>
                 <label
-                  key={`oth-${room}`}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    background: "#fff",
-                    borderRadius: 8,
-                    padding: "6px 14px",
-                    marginBottom: 6,
-                    boxShadow: "0 1px 4px #ececf6",
-                    cursor: "pointer",
                     fontWeight: 500,
+                    cursor: "pointer",
+                    background: "#f0f0fa",
+                    borderRadius: 8,
+                    padding: "4px 10px",
+                    fontSize: 14,
                   }}
                 >
                   <input
+                    ref={othersRef}
                     type="checkbox"
-                    checked={selectedRooms.includes(`Others-${room}`)}
+                    checked={othersRooms.every((room) =>
+                      selectedRooms.includes(`Others-${room}`),
+                    )}
                     onChange={(e) => {
-                      const newRooms = e.target.checked
-                        ? [...selectedRooms, `Others-${room}`]
-                        : selectedRooms.filter(
-                            (r: string) => r !== `Others-${room}`,
-                          );
-                      onChange(newRooms);
+                      const allRooms = othersRooms.map((r) => `Others-${r}`);
+                      if (e.target.checked) {
+                        onChange(
+                          Array.from(new Set([...selectedRooms, ...allRooms])),
+                        );
+                      } else {
+                        onChange(
+                          selectedRooms.filter((r) => !allRooms.includes(r)),
+                        );
+                      }
                     }}
                     style={{ marginRight: 6 }}
                   />
-                  {room}
+                  Select All
                 </label>
-              ))}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {[
+                  101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 201, 202,
+                  203, 204, 205, 206, 207, 208, 209, 210, 301, 302, 303, 304,
+                  305, 306, 307, 308, 309, 310, 401, 402, 403, 404, 405, 406,
+                  407, 408, 409, 410,
+                ].map((room) => (
+                  <label
+                    key={`oth-${room}`}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      background: "#fff",
+                      borderRadius: 8,
+                      padding: "6px 14px",
+                      marginBottom: 6,
+                      boxShadow: "0 1px 4px #ececf6",
+                      cursor: "pointer",
+                      fontWeight: 500,
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedRooms.includes(`Others-${room}`)}
+                      onChange={(e) => {
+                        const newRooms = e.target.checked
+                          ? [...selectedRooms, `Others-${room}`]
+                          : selectedRooms.filter(
+                              (r: string) => r !== `Others-${room}`,
+                            );
+                        onChange(newRooms);
+                      }}
+                      style={{ marginRight: 6 }}
+                    />
+                    {room}
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
           </div>,
-          document.body,
-        ))
-      }
+          (portalNodeRef.current ??= document.createElement("div")),
+        )}
     </div>
   );
 }

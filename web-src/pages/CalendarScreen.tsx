@@ -576,43 +576,125 @@ export function CalendarScreen() {
                       )}
                     </Box>
                   ) : (
-                    <Typography
-                      variant="caption"
-                      align="center"
+                    <Box
                       sx={{
-                        color: "error.main",
-                        fontWeight: 700,
-                        lineHeight: 1.1,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        maxWidth: "100%",
-                        wordBreak: "break-word",
-                        textAlign: "center",
+                        width: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 0.5,
+                        minWidth: 0,
                       }}
                     >
-                      {muhurtDescription}
-                    </Typography>
+                      <Typography
+                        variant="caption"
+                        align="center"
+                        sx={{
+                          color: "error.main",
+                          fontWeight: 700,
+                          lineHeight: 1.1,
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: "100%",
+                          wordBreak: "break-word",
+                          textAlign: "center",
+                        }}
+                      >
+                        {muhurtDescription}
+                      </Typography>
+                      <Box
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: "50%",
+                          display: "grid",
+                          placeItems: "center",
+                          bgcolor: isSelected ? "#ffffff" : "primary.main",
+                          color: isSelected
+                            ? "primary.main"
+                            : "primary.contrastText",
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {count}
+                      </Box>
+                      {!isPast && (
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/events/new?date=${dayKey}`);
+                          }}
+                          aria-label={`Add event for ${format(day, "MMM d, yyyy")}`}
+                          sx={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: "50%",
+                            bgcolor: "transparent",
+                            color: isMuted ? "text.disabled" : "text.primary",
+                            fontSize: "0.8rem",
+                            border: "1px solid rgba(0,0,0,0.06)",
+                            "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
+                          }}
+                        >
+                          +
+                        </IconButton>
+                      )}
+                    </Box>
                   )
                 ) : count > 0 ? (
                   <Box
                     sx={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: "50%",
-                      display: "grid",
-                      placeItems: "center",
-                      bgcolor: isSelected ? "#ffffff" : "primary.main",
-                      color: isSelected
-                        ? "primary.main"
-                        : "primary.contrastText",
-                      fontSize: "0.72rem",
-                      fontWeight: 700,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 0.5,
                     }}
                   >
-                    {count}
+                    <Box
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        borderRadius: "50%",
+                        display: "grid",
+                        placeItems: "center",
+                        bgcolor: isSelected ? "#ffffff" : "primary.main",
+                        color: isSelected
+                          ? "primary.main"
+                          : "primary.contrastText",
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {count}
+                    </Box>
+                    {!isPast && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/events/new?date=${dayKey}`);
+                        }}
+                        aria-label={`Add event for ${format(day, "MMM d, yyyy")}`}
+                        sx={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: "50%",
+                          bgcolor: "transparent",
+                          color: isMuted ? "text.disabled" : "text.primary",
+                          fontSize: "0.8rem",
+                          border: "1px solid rgba(0,0,0,0.06)",
+                          "&:hover": { bgcolor: "rgba(0,0,0,0.04)" },
+                        }}
+                      >
+                        +
+                      </IconButton>
+                    )}
                   </Box>
                 ) : !isPast ? (
                   <IconButton

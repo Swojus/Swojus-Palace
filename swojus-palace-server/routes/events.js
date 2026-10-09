@@ -55,6 +55,17 @@ router.post("/:id/checkout", authMiddleware, async (req, res) => {
   const { returnedCounts } = req.body; // { itemId: qty }
   const ev = await Event.findById(req.params.id);
   if (!ev) return res.status(404).json({ error: "Not found" });
+
+  const eventDate = ev.eventDate ? new Date(`${ev.eventDate}T00:00:00`) : null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (eventDate && eventDate > today) {
+    return res.status(400).json({
+      error: "Cannot complete checkout before the event date.",
+    });
+  }
+
   ev.inventory = ev.inventory.map((it) => ({
     ...it.toObject(),
     returnedQty: returnedCounts?.[it.id] ?? it.returnedQty ?? 0,
