@@ -15,13 +15,20 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["logo.svg"],
+      includeAssets: [
+        "logo.svg",
+        "app-icon.svg",
+        "app-icon.png",
+        "screenshots/pwa-screenshot-wide.svg",
+        "screenshots/pwa-screenshot-mobile.svg",
+      ],
       manifest: {
+        id: "/",
         name: "Swojus Palace",
         short_name: "Swojus Palace",
         description:
           "Event management dashboard for Swojus Palace with offline support.",
-        theme_color: "#0f766e",
+        theme_color: "#16665F",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait",
@@ -29,22 +36,43 @@ export default defineConfig({
         start_url: "/",
         icons: [
           {
-            src: "logo.svg?v=2026-10-07",
+            src: "/app-icon.png",
             sizes: "192x192",
-            type: "image/svg+xml",
+            type: "image/png",
             purpose: "any",
           },
           {
-            src: "logo.svg?v=2026-10-07",
+            src: "/app-icon.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "/app-icon.svg",
             sizes: "512x512",
             type: "image/svg+xml",
             purpose: "any",
           },
           {
-            src: "logo.svg?v=2026-10-07",
+            src: "/app-icon.svg",
             sizes: "512x512",
             type: "image/svg+xml",
             purpose: "maskable",
+          },
+        ],
+        screenshots: [
+          {
+            src: "/screenshots/pwa-screenshot-wide.svg",
+            sizes: "1280x720",
+            type: "image/svg+xml",
+            form_factor: "wide",
+            label: "Swojus Palace dashboard on desktop",
+          },
+          {
+            src: "/screenshots/pwa-screenshot-mobile.svg",
+            sizes: "390x844",
+            type: "image/svg+xml",
+            label: "Swojus Palace dashboard on mobile",
           },
         ],
       },
