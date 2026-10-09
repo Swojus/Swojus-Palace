@@ -21,7 +21,7 @@ import {
   Link,
   IconButton,
 } from "@mui/material";
-import logo from "../assets/logo.svg";
+import logo from "../assets/app-icon.png";
 import { useAuth } from "../AuthContext";
 
 type LoginScreenProps = {

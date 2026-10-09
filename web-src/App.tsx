@@ -28,38 +28,41 @@ import {
 } from "./pages";
 
 export default function App() {
+  const [appReady, setAppReady] = React.useState(false);
+
   React.useEffect(() => {
+    if (!appReady) return;
+
     const splash = document.getElementById("app-splash");
     if (!splash) return;
 
-    const hideSplash = () => {
-      splash.classList.add("hidden");
-      window.setTimeout(() => splash.remove(), 400);
-    };
-
-    const timer = window.setTimeout(hideSplash, 250);
+    splash.classList.add("hidden");
+    const timer = window.setTimeout(() => splash.remove(), 400);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [appReady]);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <AppRouter />
+        <AppRouter onReady={() => setAppReady(true)} />
       </AuthProvider>
     </ThemeProvider>
   );
 }
 
-function AppRouter() {
+function AppRouter({ onReady }: { onReady: () => void }) {
   const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [authReady, setAuthReady] = React.useState(false);
 
   // Keep hook order stable: all hooks declared unconditionally
   React.useEffect(() => {
-    if (!loading) setAuthReady(true);
-  }, [loading]);
+    if (!loading) {
+      setAuthReady(true);
+      onReady();
+    }
+  }, [loading, onReady]);
 
   React.useEffect(() => {
     const handleAuthExpired = () => {

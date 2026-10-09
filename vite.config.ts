@@ -72,7 +72,7 @@ export default defineConfig({
             src: "/screenshots/pwa-screenshot-mobile.svg",
             sizes: "390x844",
             type: "image/svg+xml",
-            form_factor: "portrait",
+            form_factor: "narrow",
             label: "Swojus Palace dashboard on mobile",
           },
         ],
