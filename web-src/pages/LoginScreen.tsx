@@ -38,13 +38,22 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [showLoginPassword, setShowLoginPassword] = React.useState(false);
   const [showSignUpPassword, setShowSignUpPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
-  const [signUpData, setSignUpData] = React.useState({
+  const emptySignUpData = {
     name: "",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
-  });
+  };
+  const [signUpData, setSignUpData] = React.useState(emptySignUpData);
+
+  const resetSignUpForm = React.useCallback(() => {
+    setSignUpError(null);
+    setSignUpSuccess(null);
+    setSignUpData(emptySignUpData);
+    setShowSignUpPassword(false);
+    setShowConfirmPassword(false);
+  }, []);
 
   const isEmail = (value: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -136,13 +145,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           "Account created successfully. Please wait for admin approval.",
         );
         setShowSignUp(false);
-        setSignUpData({
-          name: "",
-          email: "",
-          phone: "",
-          password: "",
-          confirmPassword: "",
-        });
+        resetSignUpForm();
       } catch (e: any) {
         setSignUpError(e.message || "Registration failed");
       }
@@ -329,7 +332,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                     variant="body2"
                     sx={{ fontWeight: 700 }}
                     onClick={() => {
-                      setSignUpSuccess(null);
+                      resetSignUpForm();
                       setShowSignUp(true);
                     }}
                   >
@@ -637,7 +640,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                         type="button"
                         variant="body2"
                         sx={{ fontWeight: 700 }}
-                        onClick={() => setShowSignUp(false)}
+                        onClick={() => {
+                          setShowSignUp(false);
+                          resetSignUpForm();
+                        }}
                       >
                         Sign In
                       </Link>
