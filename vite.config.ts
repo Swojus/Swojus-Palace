@@ -18,6 +18,7 @@ export default defineConfig({
       includeAssets: [
         "app-icon.svg",
         "app-icon.png",
+        "logo.svg",
         "screenshots/pwa-screenshot-wide.svg",
         "screenshots/pwa-screenshot-mobile.svg",
       ],
@@ -36,14 +37,14 @@ export default defineConfig({
         icons: [
           {
             src: "/app-icon.png",
-            sizes: "192x192",
+            sizes: "1600x1600",
             type: "image/png",
             purpose: "any",
           },
           {
-            src: "/app-icon.png",
+            src: "/logo.svg",
             sizes: "512x512",
-            type: "image/png",
+            type: "image/svg+xml",
             purpose: "any",
           },
           {
@@ -71,6 +72,7 @@ export default defineConfig({
             src: "/screenshots/pwa-screenshot-mobile.svg",
             sizes: "390x844",
             type: "image/svg+xml",
+            form_factor: "portrait",
             label: "Swojus Palace dashboard on mobile",
           },
         ],

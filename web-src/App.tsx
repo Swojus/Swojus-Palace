@@ -28,6 +28,19 @@ import {
 } from "./pages";
 
 export default function App() {
+  React.useEffect(() => {
+    const splash = document.getElementById("app-splash");
+    if (!splash) return;
+
+    const hideSplash = () => {
+      splash.classList.add("hidden");
+      window.setTimeout(() => splash.remove(), 400);
+    };
+
+    const timer = window.setTimeout(hideSplash, 250);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

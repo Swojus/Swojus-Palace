@@ -13,6 +13,56 @@
 @import "./styles/modules/_muhurt.css";
 
 /* Reduce font size for card content on mobile devices */
+#app-splash {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f5efe9 0%, #e7e2dc 100%);
+  z-index: 9999;
+  transition:
+    opacity 0.35s ease,
+    visibility 0.35s ease;
+}
+
+#app-splash.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(120px, 28vw, 180px);
+  height: clamp(120px, 28vw, 180px);
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 18px 52px rgba(22, 102, 95, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.splash-logo {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  animation: splash-pulse 1.25s ease-in-out infinite alternate;
+}
+
+@keyframes splash-pulse {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}
+
 @media (max-width: 600px) {
   .card,
   .enquiry-card,
