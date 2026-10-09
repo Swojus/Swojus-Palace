@@ -16,7 +16,6 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [
-        "logo.svg",
         "app-icon.svg",
         "app-icon.png",
         "screenshots/pwa-screenshot-wide.svg",
@@ -81,6 +80,8 @@ export default defineConfig({
         type: "module",
       },
       workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === "document",
