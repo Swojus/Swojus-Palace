@@ -753,6 +753,13 @@
   box-shadow: 0 8px 14px rgba(201, 149, 16, 0.12);
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 .card {
   border: 1px solid rgba(203, 213, 225, 0.9);
   border-radius: 1.12rem;

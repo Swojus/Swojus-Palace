@@ -24,6 +24,7 @@ import {
   ProfileScreen,
   EventFormScreen,
   MissingInventoryScreen,
+  PendingEventsScreen,
   UsersScreen,
 } from "./pages";
 
@@ -134,6 +135,16 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
           />
           <Route path="/enquiries" element={<EnquiryListScreen />} />
           <Route path="/completed" element={<CompletedEventsScreen />} />
+          <Route
+            path="/pending"
+            element={
+              isAdmin ? (
+                <PendingEventsScreen />
+              ) : (
+                <Navigate to="/events" replace />
+              )
+            }
+          />
           <Route path="/inventory" element={<InventoryOverviewScreen />} />
           <Route
             path="/inventory/missing/:eventId"

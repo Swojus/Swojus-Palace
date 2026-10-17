@@ -6,11 +6,13 @@ import {
   Bell,
   BookOpenCheck,
   CalendarDays,
+  CalendarClock,
   MessageCircle,
   Sparkles,
   Trophy,
   UserCircle2,
   LayoutGrid,
+  Power,
   Menu,
   X,
   type LucideIcon,
@@ -58,13 +60,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const closeMenu = () => setMenuOpen(false);
 
-  const { isAdmin } = useAuth();
+  const { isAdmin, logout } = useAuth();
 
   const sideMenuItems: NavItem[] = [
-    { to: "/calendar", label: "Calendar", icon: CalendarDays },
-    { to: "/events", label: "Booked", icon: BookOpenCheck },
-    { to: "/enquiries", label: "Enquiries", icon: MessageCircle },
-    { to: "/completed", label: "Completed", icon: Trophy },
+    ...(isAdmin
+      ? [{ to: "/pending", label: "Pending Events", icon: CalendarClock }]
+      : []),
     { to: "/inventory", label: "Inventory", icon: LayoutGrid },
     { to: "/muhurt", label: "Muhurt", icon: Sparkles },
     // admin-only users view
@@ -134,39 +135,50 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <h2 className="brand-pill brand-mark-only">
             <span>SWOJUS PALACE</span>
           </h2>
-          <Link
-            to="/notifications"
-            className="topbar-icon notification-icon"
-            title={`Notifications${notificationCount > 0 ? ` (${notificationCount})` : ""}`}
-            aria-label={`Notifications${notificationCount > 0 ? `, ${notificationCount} unread` : ""}`}
-            style={{ position: "relative" }}
-          >
-            <Bell size={20} />
-            {notificationCount > 0 && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: -4,
-                  right: -4,
-                  minWidth: 18,
-                  height: 18,
-                  padding: "0 4px",
-                  borderRadius: 999,
-                  background: "#ef4444",
-                  color: "#fff",
-                  fontSize: 10,
-                  fontWeight: 800,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  lineHeight: 1,
-                  border: "2px solid rgba(15, 23, 42, 0.9)",
-                }}
-              >
-                {notificationCount > 99 ? "99+" : notificationCount}
-              </span>
-            )}
-          </Link>
+          <div className="topbar-actions">
+            <Link
+              to="/notifications"
+              className="topbar-icon notification-icon"
+              title={`Notifications${notificationCount > 0 ? ` (${notificationCount})` : ""}`}
+              aria-label={`Notifications${notificationCount > 0 ? `, ${notificationCount} unread` : ""}`}
+              style={{ position: "relative" }}
+            >
+              <Bell size={20} />
+              {notificationCount > 0 && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -4,
+                    right: -4,
+                    minWidth: 18,
+                    height: 18,
+                    padding: "0 4px",
+                    borderRadius: 999,
+                    background: "#ef4444",
+                    color: "#fff",
+                    fontSize: 10,
+                    fontWeight: 800,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    lineHeight: 1,
+                    border: "2px solid rgba(15, 23, 42, 0.9)",
+                  }}
+                >
+                  {notificationCount > 99 ? "99+" : notificationCount}
+                </span>
+              )}
+            </Link>
+            <button
+              type="button"
+              className="topbar-icon"
+              onClick={logout}
+              title="Log out"
+              aria-label="Log out"
+            >
+              <Power size={20} />
+            </button>
+          </div>
         </header>
         <main className="content">{children}</main>
         <nav className="bottom-tabs" aria-label="Main navigation">

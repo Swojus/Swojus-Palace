@@ -25,6 +25,7 @@ type EventCardProps = {
   onConvert?: () => void;
   onCheckIn?: () => void;
   onCheckOut?: () => void;
+  showCheckOut?: boolean;
 };
 
 export function EventCard({
@@ -36,6 +37,7 @@ export function EventCard({
   onConvert,
   onCheckIn,
   onCheckOut,
+  showCheckOut = false,
 }: EventCardProps) {
   const isCompleted = mode === "completed";
   const isBookedEvent = event.eventSource === "Booking";
@@ -307,7 +309,9 @@ export function EventCard({
           >
             <LogIn size={18} />
           </button>
-          {(event.inventory ?? []).some((item) => item.issuedQty > 0) ? (
+          {onCheckOut &&
+          (showCheckOut ||
+            (event.inventory ?? []).some((item) => item.issuedQty > 0)) ? (
             <button
               type="button"
               className="btn-icon btn-complete"

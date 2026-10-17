@@ -8,6 +8,7 @@ export { EventFormScreen } from "./EventFormScreen";
 export { InventoryOverviewScreen } from "./InventoryOverviewScreen";
 export { LoginScreen } from "./LoginScreen";
 export { MissingInventoryScreen } from "./MissingInventoryScreen";
+export { PendingEventsScreen } from "./PendingEventsScreen";
 export { MuhurtScreen } from "./MuhurtScreen";
 export { NotificationsScreen } from "./NotificationsScreen";
 export { ProfileScreen } from "./ProfileScreen";
