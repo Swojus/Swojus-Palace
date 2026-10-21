@@ -169,6 +169,9 @@ function NoticeCard({
 export function NotificationsScreen() {
   const { todayMuhurtDates } = useMuhurt();
   const [events, setEvents] = React.useState<any[]>([]);
+  const [storedNotifications, setStoredNotifications] = React.useState(() =>
+    getStoredNotifications(),
+  );
   const [dismissedActivityIds, setDismissedActivityIds] = React.useState<
     Set<string>
   >(new Set());
@@ -179,6 +182,26 @@ export function NotificationsScreen() {
   React.useEffect(() => {
     writeDismissedReminderIds(dismissedReminderIds);
   }, [dismissedReminderIds]);
+
+  React.useEffect(() => {
+    const syncNotifications = () =>
+      setStoredNotifications(getStoredNotifications());
+
+    syncNotifications();
+    window.addEventListener(
+      "eventflow:notifications-updated",
+      syncNotifications,
+    );
+    window.addEventListener("storage", syncNotifications);
+
+    return () => {
+      window.removeEventListener(
+        "eventflow:notifications-updated",
+        syncNotifications,
+      );
+      window.removeEventListener("storage", syncNotifications);
+    };
+  }, []);
 
   React.useEffect(() => {
     let mounted = true;
@@ -204,12 +227,12 @@ export function NotificationsScreen() {
     })),
   );
 
-  const activityNotifications = getStoredNotifications()
+  const activityNotifications = storedNotifications
     .filter((notification) => !dismissedActivityIds.has(notification.id))
     .map((notification) => ({
       id: notification.id,
       title: actionMeta[notification.action].title,
-      description: `${notification.eventName}${notification.eventDate ? ` • ${notification.eventDate}` : ""}`,
+      description: `${notification.eventName}${notification.actorName ? ` • By ${notification.actorName}` : ""}${notification.eventDate ? ` • ${notification.eventDate}` : ""}`,
       icon: actionMeta[notification.action].icon,
       accent: actionMeta[notification.action].accent,
     }));
@@ -236,9 +259,7 @@ export function NotificationsScreen() {
 
   const handleDismissActivity = (id: string) => {
     setDismissedActivityIds((prev) => new Set(prev).add(id));
-    const notification = getStoredNotifications().find(
-      (item) => item.id === id,
-    );
+    const notification = storedNotifications.find((item) => item.id === id);
     removeStoredNotification(id);
 
     if (notification?.source === "server") {

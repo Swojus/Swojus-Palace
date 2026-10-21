@@ -102,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email: body.user.email,
       phone: body.user.phone,
       roleId: body.user.roleId,
+      name: body.user.name,
     });
   };
 

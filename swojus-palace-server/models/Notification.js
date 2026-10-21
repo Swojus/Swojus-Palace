@@ -8,6 +8,7 @@ const NotificationSchema = new mongoose.Schema({
   },
   eventName: { type: String, required: true },
   eventDate: String,
+  actorName: String,
   createdAt: { type: Date, default: Date.now },
 });
 

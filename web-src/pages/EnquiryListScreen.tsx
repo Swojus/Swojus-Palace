@@ -107,8 +107,6 @@ export function EnquiryListScreen() {
       if (record.eventSource !== "Enquiry") return false;
       if (recordDate) {
         const recordDateKey = recordDate.slice(0, 10);
-        const todayKey = toLocalIsoDate(new Date());
-        if (recordDateKey < todayKey) return false;
         if (fromDate) {
           const fromKey = toLocalIsoDate(fromDate);
           if (recordDateKey < fromKey) return false;

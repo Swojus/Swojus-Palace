@@ -13,6 +13,7 @@ export type StoredNotification = {
   action: NotificationAction;
   eventName: string;
   eventDate?: string;
+  actorName?: string;
   createdAt: string;
   source?: "server";
 };
@@ -22,32 +23,39 @@ const MAX_NOTIFICATIONS = 30;
 
 const actionMeta: Record<
   NotificationAction,
-  { title: string; body: (eventName: string, eventDate?: string) => string }
+  {
+    title: string;
+    body: (
+      eventName: string,
+      eventDate?: string,
+      actorName?: string,
+    ) => string;
+  }
 > = {
   created: {
     title: "Event created",
-    body: (eventName, eventDate) =>
-      `${eventName}${eventDate ? ` • ${eventDate}` : ""}`,
+    body: (eventName, eventDate, actorName) =>
+      `${eventName}${actorName ? ` • By ${actorName}` : ""}${eventDate ? ` • ${eventDate}` : ""}`,
   },
   updated: {
     title: "Event updated",
-    body: (eventName, eventDate) =>
-      `${eventName}${eventDate ? ` • ${eventDate}` : ""}`,
+    body: (eventName, eventDate, actorName) =>
+      `${eventName}${actorName ? ` • By ${actorName}` : ""}${eventDate ? ` • ${eventDate}` : ""}`,
   },
   converted: {
     title: "Enquiry converted",
-    body: (eventName, eventDate) =>
-      `${eventName}${eventDate ? ` • ${eventDate}` : ""}`,
+    body: (eventName, eventDate, actorName) =>
+      `${eventName}${actorName ? ` • By ${actorName}` : ""}${eventDate ? ` • ${eventDate}` : ""}`,
   },
   checkin: {
     title: "Check-in completed",
-    body: (eventName, eventDate) =>
-      `${eventName}${eventDate ? ` • ${eventDate}` : ""}`,
+    body: (eventName, eventDate, actorName) =>
+      `${eventName}${actorName ? ` • By ${actorName}` : ""}${eventDate ? ` • ${eventDate}` : ""}`,
   },
   checkout: {
     title: "Checkout completed",
-    body: (eventName, eventDate) =>
-      `${eventName}${eventDate ? ` • ${eventDate}` : ""}`,
+    body: (eventName, eventDate, actorName) =>
+      `${eventName}${actorName ? ` • By ${actorName}` : ""}${eventDate ? ` • ${eventDate}` : ""}`,
   },
 };
 
@@ -85,7 +93,11 @@ function notifyViaServiceWorker(notification: StoredNotification) {
     .then((registration) => {
       const meta = actionMeta[notification.action];
       registration.showNotification(meta.title, {
-        body: meta.body(notification.eventName, notification.eventDate),
+        body: meta.body(
+          notification.eventName,
+          notification.eventDate,
+          notification.actorName,
+        ),
         tag: notification.id,
         icon: "/icon-512.svg",
       });
@@ -108,7 +120,11 @@ function notifyViaBrowserApi(notification: StoredNotification) {
 
   const meta = actionMeta[notification.action];
   const notificationInstance = new Notification(meta.title, {
-    body: meta.body(notification.eventName, notification.eventDate),
+    body: meta.body(
+      notification.eventName,
+      notification.eventDate,
+      notification.actorName,
+    ),
     icon: "/icon-512.svg",
     tag: notification.id,
   });
@@ -139,6 +155,7 @@ export async function triggerNativeNotification(
             body: actionMeta[notification.action].body(
               notification.eventName,
               notification.eventDate,
+              notification.actorName,
             ),
             schedule: { at: new Date(Date.now() + 1000) },
             sound: "default",
@@ -205,6 +222,8 @@ export function isStoredNotification(
       notification.action as string,
     ) &&
     typeof notification.eventName === "string" &&
+    (notification.actorName === undefined ||
+      typeof notification.actorName === "string") &&
     typeof notification.createdAt === "string"
   );
 }
@@ -244,12 +263,14 @@ export function addStoredNotification(
   action: NotificationAction,
   eventName: string,
   eventDate?: string,
+  actorName?: string,
 ) {
   const notification: StoredNotification = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     action,
     eventName,
     eventDate,
+    actorName,
     createdAt: new Date().toISOString(),
   };
 

@@ -99,10 +99,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const interval = window.setInterval(() => {
       void refreshNotifications();
     }, 15000);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshNotifications();
+      }
+    };
+
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 
     return () => {
       active = false;
       window.clearInterval(interval);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
   }, [isAdmin]);
 

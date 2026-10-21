@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { mockRecords, saveMockRecordUpdate } from "../../src/data/mock";
 import apiFetch from "../utils/api";
 import { addStoredNotification } from "../../src/data/notificationLog";
+import { useAuth } from "../AuthContext";
 import {
   ArrowLeft,
   BedSingle,
@@ -45,6 +46,8 @@ function iconForItem(name: string) {
 
 export function CheckInScreen() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const actorName = user?.name || user?.email || "User";
   const { eventId } = useParams();
   const [event, setEvent] = React.useState<any | null>(
     () => mockRecords.find((item) => item.id === eventId) || null,
@@ -129,6 +132,7 @@ export function CheckInScreen() {
           "checkin",
           saved.customerName ?? saved.title,
           saved.eventDate,
+          actorName,
         );
         navigate("/events");
       })
@@ -142,6 +146,7 @@ export function CheckInScreen() {
           "checkin",
           event.customerName ?? event.title,
           event.eventDate,
+          actorName,
         );
         navigate("/events");
       });

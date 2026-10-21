@@ -34,6 +34,7 @@ async function notifyAdminOfConversion(user, event) {
       action: "converted",
       eventName: event.customerName || event.title || "New event",
       eventDate: event.eventDate,
+      actorName: user.name || user.email || "Manager",
     });
   }
 }
@@ -61,6 +62,8 @@ router.post("/", authMiddleware, async (req, res) => {
       action: "created",
       eventName: created.customerName || created.title || "New event",
       eventDate: created.eventDate,
+      actorName:
+        req.userDoc?.name || req.userDoc?.email || "Manager",
     });
   }
 
@@ -74,7 +77,7 @@ router.post("/:id/convert", authMiddleware, async (req, res) => {
     return res.status(404).json({ error: "Enquiry not found or converted" });
   }
 
-  await notifyAdminOfConversion(req.user, converted);
+  await notifyAdminOfConversion(req.userDoc, converted);
   res.json(converted);
 });
 
@@ -84,6 +87,17 @@ router.put("/:id", authMiddleware, async (req, res) => {
     const updated = await Event.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
+
+    if (updated) {
+      await Notification.create({
+        action: "updated",
+        eventName: updated.customerName || updated.title || "Event",
+        eventDate: updated.eventDate,
+        actorName:
+          req.userDoc?.name || req.userDoc?.email || "Admin",
+      });
+    }
+
     return res.json(updated);
   }
 
@@ -96,7 +110,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
     return res.status(404).json({ error: "Enquiry not found or converted" });
   }
 
-  await notifyAdminOfConversion(req.user, converted);
+  await notifyAdminOfConversion(req.userDoc, converted);
   res.json(converted);
 });
 

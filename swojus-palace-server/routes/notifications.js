@@ -14,6 +14,7 @@ router.get("/", authMiddleware, requireAdmin, async (req, res) => {
       action: notification.action,
       eventName: notification.eventName,
       eventDate: notification.eventDate,
+      actorName: notification.actorName,
       createdAt: notification.createdAt.toISOString(),
       source: "server",
     })),

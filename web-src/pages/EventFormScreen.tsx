@@ -45,6 +45,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   const navigate = useNavigate();
+  const { user, isAdmin } = useAuth();
+  const actorName = user?.name || user?.email || "User";
   const { eventId } = useParams();
   const [searchParams] = useSearchParams();
   const enquiryId = searchParams.get("enquiryId");
@@ -187,17 +189,15 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
         body: JSON.stringify(payload),
       })
         .then((r) => r.json())
-        .then((savedRecord) => {
+        .then(() => navigate(-1))
+        .catch(() => {
+          const savedRecord = saveMockRecord(payload as any, targetId);
           addStoredNotification(
             "updated",
             savedRecord.customerName ?? savedRecord.title,
             savedRecord.eventDate,
+            actorName,
           );
-          navigate(-1);
-        })
-        .catch(() => {
-          // fallback to local save
-          saveMockRecord(payload as any, targetId);
           navigate(-1);
         });
       return;
@@ -215,6 +215,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
             "converted",
             savedRecord.customerName ?? savedRecord.title,
             savedRecord.eventDate,
+            actorName,
           );
           navigate("/events", { replace: true });
         })
@@ -224,6 +225,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
             "converted",
             savedRecord.customerName ?? savedRecord.title,
             savedRecord.eventDate,
+            actorName,
           );
           navigate("/events", { replace: true });
         });
@@ -245,6 +247,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
           isCreatingNewEvent ? "created" : "converted",
           savedRecord.customerName ?? savedRecord.title,
           savedRecord.eventDate,
+          actorName,
         );
 
         if (isConvertingEnquiry || isCreatingNewEvent || !existingEvent) {
@@ -263,6 +266,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
             "created",
             savedRecord.customerName ?? savedRecord.title,
             savedRecord.eventDate,
+            actorName,
           );
           navigate(redirectPath, { replace: true });
         } else {
@@ -338,8 +342,6 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   );
 
   const { muhurtDates } = useMuhurt();
-  const { isAdmin } = useAuth();
-
   React.useEffect(() => {
     if (mode === "edit" && !eventId) {
       navigate("/events", { replace: true });

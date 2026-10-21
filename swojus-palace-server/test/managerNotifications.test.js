@@ -20,7 +20,7 @@ test("manager event submissions create an admin notification", async () => {
     customerName: "Test Customer",
     eventDate: "2026-11-01",
   };
-  const user = { _id: userId };
+  const user = { _id: userId, name: "Test Manager" };
 
   jest.spyOn(User, "findById").mockReturnValue({
     select: jest.fn().mockResolvedValue(user),
@@ -41,13 +41,16 @@ test("manager event submissions create an admin notification", async () => {
     action: "created",
     eventName: event.customerName,
     eventDate: event.eventDate,
+    actorName: user.name,
   });
 });
 
 test("admin event submissions do not create manager notifications", async () => {
   const userId = new mongoose.Types.ObjectId();
   jest.spyOn(User, "findById").mockReturnValue({
-    select: jest.fn().mockResolvedValue({ _id: userId }),
+    select: jest
+      .fn()
+      .mockResolvedValue({ _id: userId, roleId: 1, name: "Test Admin" }),
   });
   jest.spyOn(Event, "create").mockResolvedValue({
     _id: new mongoose.Types.ObjectId(),
@@ -67,6 +70,40 @@ test("admin event submissions do not create manager notifications", async () => 
   expect(createNotification).not.toHaveBeenCalled();
 });
 
+test("admin event updates create a shared notification with the actor name", async () => {
+  const userId = new mongoose.Types.ObjectId();
+  const eventId = new mongoose.Types.ObjectId();
+  const updated = {
+    _id: eventId,
+    customerName: "Updated Customer",
+    eventDate: "2026-11-01",
+  };
+
+  jest.spyOn(User, "findById").mockReturnValue({
+    select: jest
+      .fn()
+      .mockResolvedValue({ _id: userId, roleId: 1, name: "Test Admin" }),
+  });
+  jest.spyOn(Event, "findByIdAndUpdate").mockResolvedValue(updated);
+  const createNotification = jest
+    .spyOn(Notification, "create")
+    .mockResolvedValue({});
+  const token = jwt.sign({ userId, roleId: 1 }, jwtSecret);
+
+  const response = await request(app)
+    .put(`/api/events/${eventId}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ customerName: updated.customerName });
+
+  expect(response.statusCode).toBe(200);
+  expect(createNotification).toHaveBeenCalledWith({
+    action: "updated",
+    eventName: updated.customerName,
+    eventDate: updated.eventDate,
+    actorName: "Test Admin",
+  });
+});
+
 test("manager enquiry conversions create an admin notification", async () => {
   const userId = new mongoose.Types.ObjectId();
   const enquiryId = new mongoose.Types.ObjectId();
@@ -78,7 +115,9 @@ test("manager enquiry conversions create an admin notification", async () => {
   };
 
   jest.spyOn(User, "findById").mockReturnValue({
-    select: jest.fn().mockResolvedValue({ _id: userId }),
+    select: jest
+      .fn()
+      .mockResolvedValue({ _id: userId, roleId: 2, name: "Test Manager" }),
   });
   const updateEvent = jest
     .spyOn(Event, "findOneAndUpdate")
@@ -109,6 +148,7 @@ test("manager enquiry conversions create an admin notification", async () => {
     action: "converted",
     eventName: converted.customerName,
     eventDate: converted.eventDate,
+    actorName: "Test Manager",
   });
 });
 

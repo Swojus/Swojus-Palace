@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { mockRecords, saveMockRecordUpdate } from "../../src/data/mock";
 import apiFetch from "../utils/api";
 import { addStoredNotification } from "../../src/data/notificationLog";
+import { useAuth } from "../AuthContext";
 import {
   ArrowLeft,
   BedSingle,
@@ -50,6 +51,8 @@ function iconForItem(name: string) {
 
 export function CheckOutScreen() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const actorName = user?.name || user?.email || "User";
   const location = useLocation();
   const params = useParams();
   const { issuedCounts } = (location.state as CheckoutLocationState) || {};
@@ -154,6 +157,7 @@ export function CheckOutScreen() {
           "checkout",
           saved.customerName ?? saved.title,
           saved.eventDate,
+          actorName,
         );
         navigate("/completed");
       })
@@ -166,6 +170,7 @@ export function CheckOutScreen() {
           "checkout",
           event.customerName ?? event.title,
           event.eventDate,
+          actorName,
         );
         navigate("/completed");
       });
