@@ -84,7 +84,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
     setLoginError(null);
     try {
-      await login(email, password);
+      await login(email.toLowerCase(), password);
       onLogin();
     } catch (e: any) {
       setLoginError(e.message || "Login failed");
@@ -131,7 +131,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             credentials: "include",
             body: JSON.stringify({
               name: signUpData.name,
-              email: signUpData.email,
+              email: signUpData.email.toLowerCase(),
               phone: sanitizePhone(signUpData.phone),
               password: signUpData.password,
             }),
@@ -161,6 +161,16 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         justifyContent: "center",
         bgcolor: "#e7e3de",
         px: 2,
+        "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active": {
+          WebkitBoxShadow: "0 0 0 100px #f4f0ea inset",
+          WebkitTextFillColor: "#2e2a26",
+          caretColor: "#2e2a26",
+        },
+        "& input:autofill": {
+          boxShadow: "0 0 0 100px #f4f0ea inset",
+          color: "#2e2a26",
+          caretColor: "#2e2a26",
+        },
       }}
     >
       <Card
@@ -210,7 +220,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   label="Email or Phone"
                   type="text"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.toLowerCase())}
                   placeholder="you@example.com or 9876543210"
                   required
                   fullWidth
@@ -398,7 +408,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                       type="email"
                       value={signUpData.email}
                       onChange={(e) =>
-                        setSignUpData({ ...signUpData, email: e.target.value })
+                        setSignUpData({
+                          ...signUpData,
+                          email: e.target.value.toLowerCase(),
+                        })
                       }
                       placeholder="you@example.com"
                       required

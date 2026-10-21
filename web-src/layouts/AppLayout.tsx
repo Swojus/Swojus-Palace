@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../AuthContext";
 import { Link, useLocation } from "react-router-dom";
-import { getStoredNotifications } from "../../src/data/notificationLog";
+import {
+  getStoredNotifications,
+  isStoredNotification,
+  mergeStoredNotifications,
+} from "../../src/data/notificationLog";
+import apiFetch from "../utils/api";
 import {
   Bell,
   BookOpenCheck,
@@ -61,6 +66,45 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const closeMenu = () => setMenuOpen(false);
 
   const { isAdmin, logout } = useAuth();
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    let active = true;
+    let receivedInitialSnapshot = false;
+
+    const refreshNotifications = async () => {
+      try {
+        const response = await apiFetch("/api/notifications", {
+          method: "GET",
+        });
+        if (!response.ok) {
+          throw new Error(`Notification request failed (${response.status})`);
+        }
+
+        const data: unknown = await response.json();
+        if (!Array.isArray(data) || !data.every(isStoredNotification)) {
+          throw new Error("Notification response had an invalid format");
+        }
+        if (!active) return;
+
+        mergeStoredNotifications(data, receivedInitialSnapshot);
+        receivedInitialSnapshot = true;
+      } catch (error) {
+        console.error("Unable to refresh notifications:", error);
+      }
+    };
+
+    void refreshNotifications();
+    const interval = window.setInterval(() => {
+      void refreshNotifications();
+    }, 15000);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [isAdmin]);
 
   const sideMenuItems: NavItem[] = [
     ...(isAdmin

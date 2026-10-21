@@ -14,14 +14,12 @@ import {
 
 type EnquiryCardProps = {
   enquiry: RecordItem;
-  isConvertDisabled?: boolean;
   onConvert?: () => void;
   onDelete?: () => void;
 };
 
 export function EnquiryCard({
   enquiry,
-  isConvertDisabled = false,
   onConvert,
   onDelete,
 }: EnquiryCardProps) {
@@ -136,18 +134,10 @@ export function EnquiryCard({
           type="button"
           className="btn-icon btn-assign"
           aria-label="Convert enquiry"
-          aria-disabled={isConvertDisabled}
-          disabled={isConvertDisabled}
-          title={
-            isConvertDisabled
-              ? "This enquiry date is already booked"
-              : "Convert enquiry"
-          }
+          title="Convert enquiry"
           onClick={(e) => {
             e.stopPropagation();
-            if (!isConvertDisabled) {
-              onConvert?.();
-            }
+            onConvert?.();
           }}
         >
           <Plus size={18} />

@@ -134,15 +134,6 @@ export function EnquiryListScreen() {
   const showLoader = loading && events.length === 0;
   const showEmptyState = !loading && enquiries.length === 0;
 
-  const isConvertDisabled = (enquiryDate?: string) =>
-    Boolean(
-      enquiryDate &&
-      events.some(
-        (record) =>
-          record.eventSource === "Booking" && record.eventDate === enquiryDate,
-      ),
-    );
-
   return (
     <Box sx={{ maxWidth: 480, mx: "auto", mt: 2, px: 1 }}>
       <Card
@@ -226,7 +217,6 @@ export function EnquiryListScreen() {
               <EnquiryCard
                 key={String(enquiryId ?? "")}
                 enquiry={{ ...enquiry, id: String(enquiryId ?? "") }}
-                isConvertDisabled={isConvertDisabled(enquiry.eventDate)}
                 onConvert={() =>
                   navigate(
                     `/events/new?enquiryId=${encodeURIComponent(String(enquiryId ?? ""))}&asEdit=1`,

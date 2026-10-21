@@ -14,6 +14,7 @@ export type StoredNotification = {
   eventName: string;
   eventDate?: string;
   createdAt: string;
+  source?: "server";
 };
 
 const STORAGE_KEY = "eventflow/notifications";
@@ -190,6 +191,53 @@ export function getStoredNotifications() {
   return readStoredNotifications().sort((a, b) =>
     b.createdAt.localeCompare(a.createdAt),
   );
+}
+
+export function isStoredNotification(
+  value: unknown,
+): value is StoredNotification {
+  if (!value || typeof value !== "object") return false;
+
+  const notification = value as Record<string, unknown>;
+  return (
+    typeof notification.id === "string" &&
+    ["created", "updated", "converted", "checkin", "checkout"].includes(
+      notification.action as string,
+    ) &&
+    typeof notification.eventName === "string" &&
+    typeof notification.createdAt === "string"
+  );
+}
+
+export function mergeStoredNotifications(
+  notifications: unknown[],
+  notifyNew = false,
+) {
+  const stored = readStoredNotifications();
+  const storedIds = new Set(stored.map((notification) => notification.id));
+  const incoming = notifications.filter(isStoredNotification).map((item) => ({
+    ...item,
+    source: "server" as const,
+  }));
+  const newNotifications = incoming.filter(
+    (notification) => !storedIds.has(notification.id),
+  );
+  const merged = [...incoming, ...stored].filter(
+    (notification, index, all) =>
+      all.findIndex((candidate) => candidate.id === notification.id) === index,
+  );
+
+  writeStoredNotifications(
+    merged
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, MAX_NOTIFICATIONS),
+  );
+
+  if (notifyNew) {
+    newNotifications.forEach((notification) => {
+      void triggerNativeNotification(notification);
+    });
+  }
 }
 
 export function addStoredNotification(

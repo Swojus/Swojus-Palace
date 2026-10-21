@@ -236,7 +236,26 @@ export function NotificationsScreen() {
 
   const handleDismissActivity = (id: string) => {
     setDismissedActivityIds((prev) => new Set(prev).add(id));
+    const notification = getStoredNotifications().find(
+      (item) => item.id === id,
+    );
     removeStoredNotification(id);
+
+    if (notification?.source === "server") {
+      void apiFetch(`/api/notifications/${id}`, {
+        method: "DELETE",
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(
+              `Notification dismissal failed (${response.status})`,
+            );
+          }
+        })
+        .catch((error) => {
+          console.error("Unable to dismiss notification:", error);
+        });
+    }
   };
 
   const handleDismissReminder = (id: string) => {

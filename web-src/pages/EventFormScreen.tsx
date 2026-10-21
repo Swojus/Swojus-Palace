@@ -50,6 +50,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   const enquiryId = searchParams.get("enquiryId");
   const dateParam = searchParams.get("date") || undefined;
   const asEditFlag = searchParams.get("asEdit");
+  const isConvertingEnquiryForm = Boolean(enquiryId && asEditFlag === "1");
 
   const [existingEvent, setExistingEvent] = React.useState<any | undefined>(
     undefined,
@@ -97,7 +98,10 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
     venue: sourceRecord?.venue || "",
     rooms: sourceRecord?.rooms || [],
     eventSource:
-      existingEvent?.eventSource || sourceRecord?.eventSource || "Enquiry",
+      existingEvent?.eventSource ||
+      (isConvertingEnquiryForm || enquiry
+        ? "Booking"
+        : sourceRecord?.eventSource || "Enquiry"),
     confirmed: (sourceRecord as any)?.confirmed || false,
     eventDate: sourceRecord?.eventDate || dateParam || "",
     eventTime: sourceRecord?.eventTime || "",
@@ -114,8 +118,9 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
       rooms: sourceRecord?.rooms || [],
       eventSource:
         (existingEvent && existingEvent.eventSource) ||
-        sourceRecord?.eventSource ||
-        "Enquiry",
+        (isConvertingEnquiryForm || enquiry
+          ? "Booking"
+          : sourceRecord?.eventSource || "Enquiry"),
       confirmed: (sourceRecord as any)?.confirmed || false,
       eventDate:
         (existingEvent && existingEvent.eventDate) ||
@@ -199,8 +204,8 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
     }
 
     if (isConvertingEnquiry && requestId) {
-      void apiFetch(`/api/events/${requestId}`, {
-        method: "PUT",
+      void apiFetch(`/api/events/${requestId}/convert`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
@@ -770,11 +775,18 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                 open={Boolean(roomsAnchorEl)}
                 anchorEl={roomsAnchorEl}
                 onClose={() => setRoomsAnchorEl(null)}
-                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-                transformOrigin={{ vertical: "top", horizontal: "left" }}
-                PaperProps={{ style: { minWidth: 320, maxWidth: 400 } }}
+                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                transformOrigin={{ vertical: "top", horizontal: "center" }}
+                PaperProps={{
+                  sx: {
+                    width: "min(400px, calc(100vw - 32px))",
+                    minWidth: 0,
+                    maxWidth: "calc(100vw - 32px)",
+                    boxSizing: "border-box",
+                  },
+                }}
               >
-                <Box sx={{ p: 2 }}>
+                <Box sx={{ p: { xs: 1, sm: 2 }, minWidth: 0 }}>
                   {/* Phase 1 group */}
                   <Box sx={{ mb: 1 }}>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>

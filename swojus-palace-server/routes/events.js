@@ -1,7 +1,42 @@
 const express = require("express");
 const router = express.Router();
 const Event = require("../models/Event");
+const Notification = require("../models/Notification");
 const { authMiddleware, requireAdmin } = require("../middleware/auth");
+
+function getConversionUpdates(data) {
+  return {
+    title: data.title,
+    customerName: data.customerName,
+    phone: data.phone,
+    altPhone: data.altPhone,
+    venue: data.venue,
+    rooms: data.rooms,
+    eventDate: data.eventDate,
+    eventTime: data.eventTime,
+    eventType: data.eventType,
+    eventSource: "Booking",
+    inventory: data.inventory,
+  };
+}
+
+async function convertEnquiry(id, data) {
+  return Event.findOneAndUpdate(
+    { _id: id, eventSource: "Enquiry" },
+    { $set: getConversionUpdates(data) },
+    { new: true, runValidators: true },
+  );
+}
+
+async function notifyAdminOfConversion(user, event) {
+  if (user.roleId !== 1) {
+    await Notification.create({
+      action: "converted",
+      eventName: event.customerName || event.title || "New event",
+      eventDate: event.eventDate,
+    });
+  }
+}
 
 // list events
 router.get("/", authMiddleware, async (req, res) => {
@@ -20,15 +55,49 @@ router.get("/:id", authMiddleware, async (req, res) => {
 router.post("/", authMiddleware, async (req, res) => {
   const data = req.body;
   const created = await Event.create(data);
+
+  if (req.user.roleId !== 1) {
+    await Notification.create({
+      action: "created",
+      eventName: created.customerName || created.title || "New event",
+      eventDate: created.eventDate,
+    });
+  }
+
   res.status(201).json(created);
 });
 
-// update event (admin only)
-router.put("/:id", authMiddleware, requireAdmin, async (req, res) => {
-  const updated = await Event.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
-  res.json(updated);
+router.post("/:id/convert", authMiddleware, async (req, res) => {
+  const converted = await convertEnquiry(req.params.id, req.body);
+
+  if (!converted) {
+    return res.status(404).json({ error: "Enquiry not found or converted" });
+  }
+
+  await notifyAdminOfConversion(req.user, converted);
+  res.json(converted);
+});
+
+// Managers can only use the legacy update route to convert enquiries.
+router.put("/:id", authMiddleware, async (req, res) => {
+  if (req.user.roleId === 1) {
+    const updated = await Event.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    return res.json(updated);
+  }
+
+  if (req.user.roleId !== 2 || req.body.eventSource !== "Booking") {
+    return res.status(403).json({ error: "Admin required" });
+  }
+
+  const converted = await convertEnquiry(req.params.id, req.body);
+  if (!converted) {
+    return res.status(404).json({ error: "Enquiry not found or converted" });
+  }
+
+  await notifyAdminOfConversion(req.user, converted);
+  res.json(converted);
 });
 
 // delete event (admin only)

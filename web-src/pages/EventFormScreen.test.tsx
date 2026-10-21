@@ -70,6 +70,51 @@ describe("EventFormScreen", () => {
     );
   });
 
+  it("selects Booking immediately when opening an enquiry conversion form", async () => {
+    let resolveEvents!: (response: { json: () => Promise<unknown> }) => void;
+    vi.mocked(apiFetch).mockReturnValue(
+      new Promise((resolve) => {
+        resolveEvents = resolve;
+      }),
+    );
+
+    render(
+      <MemoryRouter
+        initialEntries={[
+          "/events/new?enquiryId=enquiry-1&asEdit=1",
+        ]}
+      >
+        <EventFormScreen />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("button", { name: /booking/i })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: /enquiry/i })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+
+    resolveEvents({
+      json: async () => [
+        {
+          id: "enquiry-1",
+          eventSource: "Enquiry",
+          customerName: "Test Customer",
+        },
+      ],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /booking/i })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    });
+  });
+
   it("allows creating another booking on a date that already has an event and shows a note", async () => {
     render(
       <MemoryRouter initialEntries={["/events?date=2025-07-15"]}>

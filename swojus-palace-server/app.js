@@ -21,6 +21,7 @@ app.use(morgan("dev"));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/users", require("./routes/users"));
 app.use("/api/events", require("./routes/events"));
+app.use("/api/notifications", require("./routes/notifications"));
 app.use("/api/muhurt", require("./routes/muhurt"));
 
 app.get("/", (req, res) =>
