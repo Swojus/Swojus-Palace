@@ -155,12 +155,19 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   return (
     <Box
       sx={{
+        height: "100vh",
         minHeight: "100vh",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        overflowY: "auto",
+        WebkitOverflowScrolling: "touch",
         bgcolor: "#e7e3de",
         px: 2,
+        "@supports (height: 100dvh)": {
+          height: "100dvh",
+          minHeight: "100dvh",
+        },
         "& input:-webkit-autofill, & input:-webkit-autofill:hover, & input:-webkit-autofill:focus, & input:-webkit-autofill:active": {
           WebkitBoxShadow: "0 0 0 100px #f4f0ea inset",
           WebkitTextFillColor: "#2e2a26",
@@ -182,6 +189,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           overflow: "hidden",
           bgcolor: "#f4f0ea",
           border: "1px solid rgba(145, 118, 77, 0.08)",
+          my: "auto",
         }}
       >
         <Box
@@ -191,16 +199,48 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            gap: 0.7,
+            gap: 0,
             background: "transparent",
           }}
         >
           <Box
-            component="img"
-            src={logo}
-            alt="App logo"
-            sx={{ width: 190, height: 190, display: "block" }}
-          />
+            sx={{
+              width: 190,
+              height: 158,
+              position: "relative",
+              overflow: "hidden",
+              flexShrink: 0,
+            }}
+          >
+            <Box
+              component="img"
+              src={logo}
+              alt="Swojus Palace logo"
+              sx={{
+                width: 238,
+                height: 238,
+                maxWidth: "none",
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                display: "block",
+                mixBlendMode: "multiply",
+              }}
+            />
+          </Box>
+          <Typography
+            component="h1"
+            variant="h5"
+            sx={{
+              color: "#b98008",
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              lineHeight: 1.2,
+            }}
+          >
+            Swojus Palace
+          </Typography>
         </Box>
 
         <CardContent sx={{ pt: 0.4, px: 3, pb: 3.2 }}>
