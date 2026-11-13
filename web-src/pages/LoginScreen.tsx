@@ -232,14 +232,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <Typography
             component="h1"
             variant="h5"
-            sx={{
-              color: "#b98008",
-              fontWeight: 700,
-              letterSpacing: "0.04em",
-              lineHeight: 1.2,
-            }}
+            className="brand-name"
           >
-            Swojus Palace
+            SWOJUS PALACE
           </Typography>
         </Box>
 
