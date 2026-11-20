@@ -22,7 +22,6 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import headerLogo from "../assets/header.svg";
 
 type NavItem = {
   to: string;
@@ -140,7 +139,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       >
         <div className="side-menu-header">
           <h2 className="brand-pill side-menu-brand">
-            <span>SWOJUS PALACE</span>
+            <img src="/app-icon.svg" alt="" aria-hidden="true" />
+            <span className="brand-name header-brand-name">SWOJUS PALACE</span>
           </h2>
           <button
             type="button"
@@ -187,7 +187,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu size={20} />
           </button>
           <h2 className="brand-pill brand-mark-only">
-            <span>SWOJUS PALACE</span>
+            <img src="/app-icon.svg" alt="" aria-hidden="true" />
+            <span className="brand-name header-brand-name topbar-brand-name">
+              SWOJUS PALACE
+            </span>
           </h2>
           <div className="topbar-actions">
             <Link

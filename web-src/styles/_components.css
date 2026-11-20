@@ -670,7 +670,7 @@
 .brand-pill {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.2rem;
   font-size: 1.12rem;
   font-weight: 900;
   color: #fff;
@@ -693,12 +693,33 @@
   flex: 1;
   justify-content: center;
 }
+.brand-pill .header-brand-name {
+  display: block;
+  font-size: 1rem;
+  text-align: left;
+}
+.topbar .topbar-brand-name {
+  background: linear-gradient(
+    180deg,
+    #fff1a8 0%,
+    #f5cf62 22%,
+    #d89c25 46%,
+    #ffe08a 60%,
+    #edbd43 82%,
+    #c98a12 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: #ffe08a;
+  -webkit-text-fill-color: transparent;
+}
 .brand-pill img,
 .topbar-logo {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   display: block;
+  flex: 0 0 auto;
 }
 .brand-mark-only {
   display: flex;
