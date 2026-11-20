@@ -152,9 +152,10 @@ export function RoomsDropdown({ selectedRooms, onChange }: RoomsDropdownProps) {
               boxShadow:
                 "0 8px 32px 0 rgba(99,102,241,0.10), 0 1.5px 8px #e6e6f6",
               padding: 16,
-              maxHeight: 420,
+              maxHeight: "min(60vh, 360px)",
+              minHeight: 0,
               overflowY: "auto",
-              minHeight: 180,
+              overscrollBehavior: "contain",
               scrollbarColor: "#bdbdbd #f0f0fa",
               scrollbarWidth: "thin",
             }}
@@ -170,7 +171,7 @@ export function RoomsDropdown({ selectedRooms, onChange }: RoomsDropdownProps) {
                   gap: 12,
                 }}
               >
-                <span>Phase 1 (9)</span>
+                <span>PADMA (9)</span>
                 <label
                   style={{
                     display: "inline-flex",
@@ -250,7 +251,7 @@ export function RoomsDropdown({ selectedRooms, onChange }: RoomsDropdownProps) {
                   gap: 12,
                 }}
               >
-                <span>Phase 2 (6)</span>
+                <span>SONCHAFA (6)</span>
                 <label
                   style={{
                     display: "inline-flex",

@@ -18,6 +18,7 @@ import {
   Chip,
 } from "@mui/material";
 import { LoadingState } from "../components";
+import { normalizeVenueName } from "../../src/data/venues";
 
 type InventoryStatus = "not-issued" | "checked" | "missing";
 
@@ -212,8 +213,10 @@ export function MissingInventoryScreen() {
                   color="text.secondary"
                   sx={{ lineHeight: 1.3, display: "block" }}
                 >
-                  {event.customerName ?? event.title}
-                  {event.venue ? ` • ${event.venue}` : ""}
+                  {event.customerName ?? event.eventType ?? "Event"}
+                  {event.venue
+                    ? ` • ${normalizeVenueName(event.venue)}`
+                    : ""}
                 </Typography>
               </Box>
               <Chip

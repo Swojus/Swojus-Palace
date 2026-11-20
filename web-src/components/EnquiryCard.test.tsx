@@ -12,7 +12,7 @@ describe("EnquiryCard", () => {
         enquiry={{
           id: "enquiry-1",
           _id: "enquiry-1",
-          title: "Wedding",
+          eventType: "Wedding",
           customerName: "Test Customer",
           venue: "Main Hall",
           rooms: [],

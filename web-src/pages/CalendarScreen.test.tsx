@@ -24,12 +24,18 @@ vi.mock("../utils/api", () => ({
 describe("CalendarScreen", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-15T12:00:00"));
     vi.mocked(apiFetch).mockResolvedValue({
       json: async () => [
-        { id: "event-1", eventDate: "2026-10-15", title: "Wedding 1" },
-        { id: "event-2", eventDate: "2026-10-15", title: "Wedding 2" },
+        { id: "event-1", eventDate: "2026-10-15", eventType: "Wedding" },
+        { id: "event-2", eventDate: "2026-10-15", eventType: "Wedding" },
       ],
     } as any);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("shows the exact count for multiple events on the same date and keeps the add button visible", async () => {
@@ -39,7 +45,7 @@ describe("CalendarScreen", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("2")).toBeInTheDocument();
+    expect(await screen.findByText("2 events")).toBeInTheDocument();
     expect(screen.getByText("Auspicious Muhurt")).toBeInTheDocument();
     expect(
       screen.getByLabelText("Add event for Oct 15, 2026"),

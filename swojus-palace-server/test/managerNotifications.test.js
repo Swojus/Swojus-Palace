@@ -54,7 +54,7 @@ test("admin event submissions do not create manager notifications", async () => 
   });
   jest.spyOn(Event, "create").mockResolvedValue({
     _id: new mongoose.Types.ObjectId(),
-    title: "Admin event",
+    eventType: "Other",
   });
   const createNotification = jest
     .spyOn(Notification, "create")
@@ -64,7 +64,7 @@ test("admin event submissions do not create manager notifications", async () => 
   const response = await request(app)
     .post("/api/events")
     .set("Authorization", `Bearer ${token}`)
-    .send({ title: "Admin event" });
+    .send({ eventType: "Other" });
 
   expect(response.statusCode).toBe(201);
   expect(createNotification).not.toHaveBeenCalled();
@@ -170,9 +170,56 @@ test("manager legacy updates can only convert an enquiry", async () => {
   const response = await request(app)
     .put(`/api/events/${enquiryId}`)
     .set("Authorization", `Bearer ${token}`)
-    .send({ eventSource: "Enquiry", title: "Updated enquiry" });
+    .send({ eventSource: "Enquiry", eventType: "Other" });
 
   expect(response.statusCode).toBe(403);
   expect(updateEvent).not.toHaveBeenCalled();
   expect(createNotification).not.toHaveBeenCalled();
+});
+
+test("manager room updates only add rooms to an existing booking", async () => {
+  const userId = new mongoose.Types.ObjectId();
+  const eventId = new mongoose.Types.ObjectId();
+  const updated = {
+    _id: eventId,
+    eventSource: "Booking",
+    rooms: ["Phase 1-101", "Phase 1-102"],
+  };
+  jest.spyOn(User, "findById").mockReturnValue({
+    select: jest.fn().mockResolvedValue({ _id: userId }),
+  });
+  const updateEvent = jest
+    .spyOn(Event, "findOneAndUpdate")
+    .mockResolvedValue(updated);
+  const token = jwt.sign({ userId, roleId: 2 }, jwtSecret);
+
+  const response = await request(app)
+    .patch(`/api/events/${eventId}/rooms`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ rooms: ["Phase 1-102"] });
+
+  expect(response.statusCode).toBe(200);
+  expect(updateEvent).toHaveBeenCalledWith(
+    { _id: eventId.toString(), eventSource: "Booking" },
+    { $addToSet: { rooms: { $each: ["Phase 1-102"] } } },
+    { new: true },
+  );
+});
+
+test("managers cannot update event fields through the rooms endpoint", async () => {
+  const userId = new mongoose.Types.ObjectId();
+  const eventId = new mongoose.Types.ObjectId();
+  jest.spyOn(User, "findById").mockReturnValue({
+    select: jest.fn().mockResolvedValue({ _id: userId }),
+  });
+  const updateEvent = jest.spyOn(Event, "findOneAndUpdate");
+  const token = jwt.sign({ userId, roleId: 2 }, jwtSecret);
+
+  const response = await request(app)
+    .patch(`/api/events/${eventId}/rooms`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ rooms: ["Phase 1-102"], venue: "SONCHAFA" });
+
+  expect(response.statusCode).toBe(400);
+  expect(updateEvent).not.toHaveBeenCalled();
 });

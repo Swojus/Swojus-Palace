@@ -9,14 +9,24 @@ import {
   IconButton,
   Chip,
   Tooltip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Button,
+  Alert,
 } from "@mui/material";
-import { Check, X } from "lucide-react";
+import { Check, Trash2, X } from "lucide-react";
 import apiFetch from "../utils/api";
+import { useAuth } from "../AuthContext";
 
 export function UsersScreen() {
+  const { isAdmin } = useAuth();
   const [users, setUsers] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [busyId, setBusyId] = React.useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<any | null>(null);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   const loadUsers = React.useCallback(() => {
     let mounted = true;
@@ -42,6 +52,7 @@ export function UsersScreen() {
 
   const handleApproval = async (userId: string, approved: boolean) => {
     setBusyId(userId);
+    setErrorMessage("");
     try {
       const res = await apiFetch(`/api/users/${userId}/approve`, {
         method: "PATCH",
@@ -54,6 +65,35 @@ export function UsersScreen() {
       await loadUsers();
     } catch (error) {
       console.error(error);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to update approval status.",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteTarget) return;
+    const userId = String(deleteTarget._id || deleteTarget.id);
+    setBusyId(userId);
+    setErrorMessage("");
+    try {
+      const response = await apiFetch(`/api/users/${userId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Unable to delete user.");
+      }
+      setUsers((current) =>
+        current.filter((user) => String(user._id || user.id) !== userId),
+      );
+      setDeleteTarget(null);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to delete user.",
+      );
     } finally {
       setBusyId(null);
     }
@@ -64,6 +104,11 @@ export function UsersScreen() {
       <Typography variant="h5" fontWeight={800} sx={{ mb: 2 }}>
         Registered Users
       </Typography>
+      {errorMessage && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErrorMessage("")}>
+          {errorMessage}
+        </Alert>
+      )}
       <Stack spacing={1.25}>
         {loading ? (
           <Typography>Loading...</Typography>
@@ -199,7 +244,7 @@ export function UsersScreen() {
                         )}
                       </Stack>
 
-                      {u.roleId !== 1 && (
+                      {isAdmin && u.roleId !== 1 && (
                         <Stack direction="row" spacing={1} alignItems="center">
                           {!approved ? (
                             <Tooltip title="Approve user">
@@ -240,6 +285,25 @@ export function UsersScreen() {
                               </span>
                             </Tooltip>
                           )}
+                          <Tooltip title="Delete user">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                aria-label={`Delete ${u.name || u.email}`}
+                                onClick={() => setDeleteTarget(u)}
+                                disabled={isBusy}
+                                sx={{
+                                  border: "1px solid rgba(239, 68, 68, 0.2)",
+                                  backgroundColor: "rgba(239, 68, 68, 0.06)",
+                                  width: 36,
+                                  height: 36,
+                                }}
+                              >
+                                <Trash2 size={18} />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
                         </Stack>
                       )}
                     </Stack>
@@ -249,6 +313,39 @@ export function UsersScreen() {
             })
         )}
       </Stack>
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onClose={() => {
+          if (!busyId) setDeleteTarget(null);
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Delete user?</DialogTitle>
+        <DialogContent>
+          <Typography color="text.secondary">
+            This will permanently delete{" "}
+            <strong>{deleteTarget?.name || deleteTarget?.email}</strong> and
+            revoke their active sessions.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2, pb: 2 }}>
+          <Button
+            onClick={() => setDeleteTarget(null)}
+            disabled={Boolean(busyId)}
+          >
+            Cancel
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={() => void handleDeleteUser()}
+            disabled={Boolean(busyId)}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -27,7 +27,7 @@ describe("EnquiryListScreen", () => {
           id: "past-enquiry",
           eventSource: "Enquiry",
           eventDate: "2020-01-15",
-          title: "Past event",
+          eventType: "Wedding",
           customerName: "Past Customer",
           phone: "9876543210",
           venue: "Main Hall",

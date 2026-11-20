@@ -8,12 +8,14 @@ import {
   Card,
   CardContent,
   Chip,
+  Alert,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Fab,
   IconButton,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -21,8 +23,17 @@ import {
 import { useAuth } from "../AuthContext";
 
 export function MuhurtScreen() {
-  const { muhurtDates, todayMuhurtDates, addMuhurtDate, removeMuhurtDate } =
-    useMuhurt();
+  const {
+    muhurtDates,
+    todayMuhurtDates,
+    muhurtError,
+    refreshMuhurtDates,
+    addMuhurtDate,
+    removeMuhurtDate,
+  } = useMuhurt();
+  React.useEffect(() => {
+    void refreshMuhurtDates();
+  }, [refreshMuhurtDates]);
   const formatDisplayDate = (value: string) => {
     if (!value) return "";
 
@@ -45,6 +56,9 @@ export function MuhurtScreen() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [draftDate, setDraftDate] = React.useState("");
   const [draftDescription, setDraftDescription] = React.useState("");
+  const [draftType, setDraftType] = React.useState<
+    "Main Muhurt" | "Sub Muhurt"
+  >("Main Muhurt");
   const [deleteTarget, setDeleteTarget] = React.useState<null | {
     id: string;
     date: string;
@@ -90,6 +104,7 @@ export function MuhurtScreen() {
   const resetDraft = () => {
     setDraftDate("");
     setDraftDescription("");
+    setDraftType("Main Muhurt");
   };
 
   const handleOpenDialog = () => setIsDialogOpen(true);
@@ -141,12 +156,26 @@ export function MuhurtScreen() {
     addMuhurtDate({
       date: draftDate,
       description: draftDescription.trim(),
+      type: draftType,
     });
     handleCloseDialog();
   };
 
   return (
     <Box sx={{ maxWidth: 480, mx: "auto", mt: 2, px: 1, position: "relative" }}>
+      {muhurtError && (
+        <Alert
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={refreshMuhurtDates}>
+              Retry
+            </Button>
+          }
+          sx={{ mb: 1.5 }}
+        >
+          {muhurtError}
+        </Alert>
+      )}
       <Card
         elevation={3}
         sx={{
@@ -199,9 +228,21 @@ export function MuhurtScreen() {
             <Typography variant="subtitle1" fontWeight={800} color="primary">
               Today's Muhurt
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {todayMuhurtDates.map((item) => item.description).join(", ")}
-            </Typography>
+            <Stack spacing={0.25} sx={{ mt: 0.5 }}>
+              {todayMuhurtDates.map((item) => (
+                <Typography
+                  key={item.id}
+                  variant="body2"
+                  sx={{
+                    color:
+                      item.type === "Sub Muhurt" ? "#2e7d32" : "#c62828",
+                    fontWeight: 700,
+                  }}
+                >
+                  {item.type}: {item.description}
+                </Typography>
+              ))}
+            </Stack>
           </CardContent>
         </Card>
       )}
@@ -269,7 +310,8 @@ export function MuhurtScreen() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      bgcolor: "primary.main",
+                      bgcolor:
+                        item.type === "Sub Muhurt" ? "#2e7d32" : "#c62828",
                       color: "#fff",
                     }}
                   >
@@ -282,6 +324,17 @@ export function MuhurtScreen() {
                     <Typography variant="body2" color="text.secondary">
                       {item.description}
                     </Typography>
+                    <Chip
+                      label={item.type}
+                      size="small"
+                      sx={{
+                        mt: 0.5,
+                        color: "#fff",
+                        bgcolor:
+                          item.type === "Sub Muhurt" ? "#2e7d32" : "#c62828",
+                        fontWeight: 700,
+                      }}
+                    />
                   </Box>
                 </Box>
                 {isAdmin && (
@@ -370,6 +423,24 @@ export function MuhurtScreen() {
                 minRows={2}
                 maxRows={4}
               />
+              <TextField
+                select
+                label="Muhurt Type"
+                value={draftType}
+                onChange={(event) => {
+                  if (
+                    event.target.value === "Main Muhurt" ||
+                    event.target.value === "Sub Muhurt"
+                  ) {
+                    setDraftType(event.target.value);
+                  }
+                }}
+                required
+                fullWidth
+              >
+                <MenuItem value="Main Muhurt">Main Muhurt</MenuItem>
+                <MenuItem value="Sub Muhurt">Sub Muhurt</MenuItem>
+              </TextField>
             </Stack>
           </DialogContent>
           <DialogActions

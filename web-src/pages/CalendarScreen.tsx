@@ -58,7 +58,7 @@ export function CalendarScreen() {
   const [events, setEvents] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(true);
   const { muhurtDates } = useMuhurt();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
 
   React.useEffect(() => {
     let mounted = true;
@@ -101,8 +101,14 @@ export function CalendarScreen() {
   });
 
   const muhurtByDate = new Map<string, string>();
-  muhurtDates.forEach((item) => muhurtByDate.set(item.date, item.description));
-  const selectedMuhurtDescription = muhurtByDate.get(selectedDateKey);
+  const muhurtTypeByDate = new Map<string, string>();
+  muhurtDates.forEach((item) => {
+    muhurtByDate.set(item.date, item.description);
+    muhurtTypeByDate.set(item.date, item.type);
+  });
+  const selectedMuhurt = muhurtDates.find(
+    (item) => item.date === selectedDateKey,
+  );
 
   const renderDayBadge = (
     muhurtDescription: string | undefined,
@@ -301,12 +307,18 @@ export function CalendarScreen() {
               >
                 {format(selectedDate, "EEEE, MMM d, yyyy")}
               </Typography>
-              {selectedMuhurtDescription ? (
+              {selectedMuhurt ? (
                 <Typography
-                  color="error.main"
-                  sx={{ mt: 0.75, fontWeight: 700 }}
+                  sx={{
+                    mt: 0.75,
+                    fontWeight: 700,
+                    color:
+                      selectedMuhurt.type === "Sub Muhurt"
+                        ? "#2e7d32"
+                        : "#c62828",
+                  }}
                 >
-                  Muhurt: {selectedMuhurtDescription}
+                  {selectedMuhurt.type}: {selectedMuhurt.description}
                 </Typography>
               ) : null}
             </Box>
@@ -429,6 +441,9 @@ export function CalendarScreen() {
           const isPast = dayStart < todayStart;
           const count = eventCountByDate.get(dayKey) ?? 0;
           const muhurtDescription = muhurtByDate.get(dayKey);
+          const muhurtType = muhurtTypeByDate.get(dayKey);
+          const muhurtColor =
+            muhurtType === "Sub Muhurt" ? "#2e7d32" : "#c62828";
 
           return (
             <Box
@@ -462,7 +477,9 @@ export function CalendarScreen() {
                 backgroundColor: isSelected
                   ? "primary.main"
                   : muhurtDescription
-                    ? "rgba(244,63,94,0.08)"
+                    ? muhurtType === "Sub Muhurt"
+                      ? "rgba(46,125,50,0.08)"
+                      : "rgba(198,40,40,0.08)"
                     : isToday
                       ? "rgba(37,99,235,0.04)"
                       : "transparent",
@@ -470,7 +487,9 @@ export function CalendarScreen() {
                 border: isSelected
                   ? "1px solid rgba(212,160,23,0.9)"
                   : muhurtDescription
-                    ? "1px solid rgba(244,63,94,0.25)"
+                    ? muhurtType === "Sub Muhurt"
+                      ? "1px solid rgba(46,125,50,0.28)"
+                      : "1px solid rgba(198,40,40,0.25)"
                     : isToday
                       ? "1px solid rgba(37,99,235,0.45)"
                       : "1px solid transparent",
@@ -488,7 +507,7 @@ export function CalendarScreen() {
                   color: isSelected
                     ? "primary.contrastText"
                     : muhurtDescription
-                      ? "error.main"
+                      ? muhurtColor
                       : isMuted
                         ? "text.disabled"
                         : "text.primary",
@@ -528,7 +547,7 @@ export function CalendarScreen() {
                         variant="caption"
                         align="center"
                         sx={{
-                          color: "error.main",
+                          color: muhurtColor,
                           fontWeight: 700,
                           lineHeight: 1.1,
                           display: "-webkit-box",
@@ -597,7 +616,7 @@ export function CalendarScreen() {
                         variant="caption"
                         align="center"
                         sx={{
-                          color: "error.main",
+                          color: muhurtColor,
                           fontWeight: 700,
                           lineHeight: 1.1,
                           display: "-webkit-box",
@@ -792,13 +811,23 @@ export function CalendarScreen() {
                 mode={completed ? "completed" : "booked"}
                 {...(completed
                   ? {
+                      onView: () => {
+                        if (!eventId) return;
+                        navigate(`/events/${eventId}/view`);
+                      },
                       onClick: () => {
                         if (!eventId) return;
                         navigate(`/inventory/missing/${eventId}`);
                       },
                     }
                   : {
-                      ...(isAdmin
+                      onView: () => {
+                        if (!eventId) return;
+                        navigate(`/events/${eventId}/view`);
+                      },
+                      ...((isAdmin ||
+                        (user?.roleId === 2 &&
+                          event.eventSource === "Booking"))
                         ? {
                             onEdit: () => {
                               if (!eventId) return;

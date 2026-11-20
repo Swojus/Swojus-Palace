@@ -221,7 +221,7 @@ export function NotificationsScreen() {
   const missing = events.flatMap((record) =>
     listMissing(record).map(({ item, missing: qty }) => ({
       id: `${record.id ?? record._id}-${item.id}`,
-      event: record.title,
+      event: record.eventType || "Event",
       item: item.name,
       qty,
     })),

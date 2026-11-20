@@ -1,5 +1,6 @@
 import React from "react";
 import { RecordItem } from "../../src/types";
+import { normalizeVenueName } from "../../src/data/venues";
 import {
   CalendarDays,
   Clock3,
@@ -8,6 +9,7 @@ import {
   MessageCircle,
   Bookmark,
   Users,
+  Eye,
   SquarePen,
   LogIn,
   LogOut,
@@ -20,6 +22,7 @@ type EventCardProps = {
   event: RecordItem;
   mode?: "booked" | "completed";
   onClick?: () => void;
+  onView?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
   onConvert?: () => void;
@@ -32,6 +35,7 @@ export function EventCard({
   event,
   mode = "booked",
   onClick,
+  onView,
   onEdit,
   onDelete,
   onConvert,
@@ -180,11 +184,11 @@ export function EventCard({
         )}
         <p>
           <MapPin size={16} />
-          {event.venue}
+          {normalizeVenueName(event.venue)}
         </p>
         <p>
           <Bookmark size={16} />
-          {event.title}
+          {event.eventType || "Event type not specified"}
         </p>
         {Array.isArray(event.rooms) && event.rooms.length > 0 ? (
           <p>
@@ -270,9 +274,22 @@ export function EventCard({
         </button>
       ) : null}
 
-      {canManageBooking && (
+      {(canManageBooking || onView) && (
         <div className="event-actions">
-          {onEdit && (
+          {onView && (
+            <button
+              type="button"
+              className="btn-icon btn-assign"
+              aria-label="View event"
+              onClick={(e) => {
+                e.stopPropagation();
+                onView();
+              }}
+            >
+              <Eye size={18} />
+            </button>
+          )}
+          {canManageBooking && onEdit && (
             <button
               type="button"
               className="btn-icon btn-edit"
@@ -285,7 +302,7 @@ export function EventCard({
               <SquarePen size={18} />
             </button>
           )}
-          {onDelete && (
+          {canManageBooking && onDelete && (
             <button
               type="button"
               className="btn-icon btn-delete"
@@ -298,18 +315,21 @@ export function EventCard({
               <Trash2 size={18} />
             </button>
           )}
-          <button
-            type="button"
-            className="btn-icon btn-assign"
-            aria-label="Check in"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCheckIn?.();
-            }}
-          >
-            <LogIn size={18} />
-          </button>
-          {onCheckOut &&
+          {canManageBooking && (
+            <button
+              type="button"
+              className="btn-icon btn-assign"
+              aria-label="Check in"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCheckIn?.();
+              }}
+            >
+              <LogIn size={18} />
+            </button>
+          )}
+          {canManageBooking &&
+          onCheckOut &&
           (showCheckOut ||
             (event.inventory ?? []).some((item) => item.issuedQty > 0)) ? (
             <button

@@ -18,7 +18,7 @@ describe("CheckOutScreen", () => {
     vi.mocked(apiFetch).mockResolvedValue({
       json: async () => ({
         id: "event-1",
-        title: "Wedding",
+        eventType: "Wedding",
         customerName: "Test Customer",
         venue: "Main Hall",
         eventDate: "2099-12-31",
@@ -62,7 +62,7 @@ describe("CheckOutScreen", () => {
               ok: true,
               json: async () => ({
                 id: "event-1",
-                title: "Wedding",
+                eventType: "Wedding",
                 customerName: "Test Customer",
                 venue: "Main Hall",
                 eventDate: "2099-12-31",

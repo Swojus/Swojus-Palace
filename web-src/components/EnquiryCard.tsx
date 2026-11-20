@@ -108,7 +108,7 @@ export function EnquiryCard({
         </p>
         <p>
           <Bookmark size={16} />
-          {enquiry.title}
+          {enquiry.eventType || "Event type not specified"}
         </p>
         <p>
           <Users size={16} />

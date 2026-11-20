@@ -40,19 +40,19 @@ export function EnquiryListScreen() {
   const [loading, setLoading] = React.useState(true);
   const [deleteTarget, setDeleteTarget] = React.useState<null | {
     id: string;
-    title: string;
+    eventType: string;
     customerName?: string;
   }>(null);
 
   const handleDeleteRequest = (
     eventId?: string,
-    title?: string,
+    eventType?: string,
     customerName?: string,
   ) => {
     if (!eventId) return;
     setDeleteTarget({
       id: eventId,
-      title: title ?? "This enquiry",
+      eventType: eventType ?? "Enquiry",
       customerName,
     });
   };
@@ -118,7 +118,7 @@ export function EnquiryListScreen() {
       }
       if (!search) return true;
       const haystack =
-        `${record.customerName ?? ""} ${record.phone ?? ""}`.toLowerCase();
+        `${record.customerName ?? ""} ${record.phone ?? ""} ${record.eventType ?? ""}`.toLowerCase();
       return (
         haystack.includes(search.toLowerCase()) ||
         String(recordId ?? "")
@@ -225,7 +225,7 @@ export function EnquiryListScreen() {
                       onDelete: () =>
                         handleDeleteRequest(
                           enquiry.id ?? enquiry._id,
-                          enquiry.title,
+                          enquiry.eventType,
                           enquiry.customerName,
                         ),
                     }
@@ -272,7 +272,7 @@ export function EnquiryListScreen() {
             Are you sure you want to delete this enquiry?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {deleteTarget?.customerName || "Customer"} — {deleteTarget?.title}
+            {deleteTarget?.customerName || "Customer"} — {deleteTarget?.eventType}
           </Typography>
         </DialogContent>
         <DialogActions

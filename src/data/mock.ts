@@ -1,9 +1,16 @@
-import type { RecordItem } from "../types";
+import type { InventoryItem, RecordItem } from "../types";
 
 // Toggle client-side mock data. Set to `true` to enable mocks during local development.
 const USE_MOCKS = false;
 
 export const getDefaultInventory = () => [
+  {
+    id: "mattress",
+    name: "Mattress",
+    plannedQty: 0,
+    issuedQty: 0,
+    returnedQty: 0,
+  },
   {
     id: "bedsheet",
     name: "Bedsheet",
@@ -61,6 +68,30 @@ export const getDefaultInventory = () => [
     returnedQty: 0,
   },
 ];
+
+export function withMattressInventory(
+  inventory: InventoryItem[],
+): InventoryItem[] {
+  if (
+    inventory.some(
+      (item) =>
+        item.id === "mattress" || item.name?.toLowerCase() === "mattress",
+    )
+  ) {
+    return inventory;
+  }
+
+  return [
+    ...inventory,
+    {
+      id: "mattress",
+      name: "Mattress",
+      plannedQty: 0,
+      issuedQty: 0,
+      returnedQty: 0,
+    },
+  ];
+}
 
 const fixedInventory = getDefaultInventory();
 

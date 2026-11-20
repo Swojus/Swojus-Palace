@@ -42,10 +42,15 @@ import { PickersDay } from "@mui/x-date-pickers/PickersDay";
 import { useMuhurt } from "../MuhurtContext";
 import { useAuth } from "../AuthContext";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { normalizeVenueName, venueOptions } from "../../src/data/venues";
 
-export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
+export function EventFormScreen({
+  mode = "add",
+}: {
+  mode?: "add" | "edit" | "view";
+}) {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const actorName = user?.name || user?.email || "User";
   const { eventId } = useParams();
   const [searchParams] = useSearchParams();
@@ -57,7 +62,10 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   const [existingEvent, setExistingEvent] = React.useState<any | undefined>(
     undefined,
   );
+  const [saveError, setSaveError] = React.useState("");
   const [allEvents, setAllEvents] = React.useState<any[]>([]);
+  const isManagerRoomEdit = mode === "edit" && user?.roleId === 2;
+  const isReadOnly = mode === "view";
 
   React.useEffect(() => {
     let mounted = true;
@@ -69,7 +77,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
       })
       .catch(() => setAllEvents([]));
 
-    if (mode === "edit" && eventId) {
+    if ((mode === "edit" || mode === "view") && eventId) {
       void apiFetch(`/api/events/${eventId}`, { method: "GET" })
         .then((r) => r.json())
         .then((data) => {
@@ -92,12 +100,11 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   const sourceRecord = existingEvent ?? enquiry;
   // New form state for all fields in the screenshot
   const [formData, setFormData] = React.useState({
-    title: sourceRecord?.title || "",
     customer: sourceRecord?.customerName || "",
     phone: sourceRecord?.phone || "",
     altPhone: sourceRecord?.altPhone || "",
     eventType: sourceRecord?.eventType || "",
-    venue: sourceRecord?.venue || "",
+    venue: normalizeVenueName(sourceRecord?.venue),
     rooms: sourceRecord?.rooms || [],
     eventSource:
       existingEvent?.eventSource ||
@@ -111,12 +118,11 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
 
   React.useEffect(() => {
     setFormData({
-      title: sourceRecord?.title || "",
       customer: sourceRecord?.customerName || "",
       phone: sourceRecord?.phone || "",
       altPhone: sourceRecord?.altPhone || "",
       eventType: sourceRecord?.eventType || "",
-      venue: sourceRecord?.venue || "",
+      venue: normalizeVenueName(sourceRecord?.venue),
       rooms: sourceRecord?.rooms || [],
       eventSource:
         (existingEvent && existingEvent.eventSource) ||
@@ -147,8 +153,33 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
+    if (isReadOnly) return;
+
     if (mode === "edit" && !existingEvent) {
       navigate(-1);
+      return;
+    }
+
+    if (isManagerRoomEdit && existingEvent) {
+      setSaveError("");
+      void apiFetch(
+        `/api/events/${existingEvent._id || existingEvent.id}/rooms`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rooms: formData.rooms }),
+        },
+      )
+        .then(async (response) => {
+          if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            throw new Error(result.error || "Unable to update rooms.");
+          }
+          navigate(-1);
+        })
+        .catch((error: Error) => {
+          setSaveError(error.message || "Unable to update rooms.");
+        });
       return;
     }
 
@@ -163,7 +194,6 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
     const isCreatingNewEvent = !existingEvent && !enquiry;
 
     const payload = {
-      title: formData.title,
       customerName: formData.customer,
       phone: formData.phone,
       altPhone: formData.altPhone,
@@ -194,7 +224,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
           const savedRecord = saveMockRecord(payload as any, targetId);
           addStoredNotification(
             "updated",
-            savedRecord.customerName ?? savedRecord.title,
+            savedRecord.customerName ?? savedRecord.eventType ?? "Event",
             savedRecord.eventDate,
             actorName,
           );
@@ -213,7 +243,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
         .then((savedRecord) => {
           addStoredNotification(
             "converted",
-            savedRecord.customerName ?? savedRecord.title,
+            savedRecord.customerName ?? savedRecord.eventType ?? "Event",
             savedRecord.eventDate,
             actorName,
           );
@@ -223,7 +253,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
           const savedRecord = saveMockRecord(payload as any, targetId);
           addStoredNotification(
             "converted",
-            savedRecord.customerName ?? savedRecord.title,
+            savedRecord.customerName ?? savedRecord.eventType ?? "Event",
             savedRecord.eventDate,
             actorName,
           );
@@ -245,7 +275,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
 
         addStoredNotification(
           isCreatingNewEvent ? "created" : "converted",
-          savedRecord.customerName ?? savedRecord.title,
+          savedRecord.customerName ?? savedRecord.eventType ?? "Event",
           savedRecord.eventDate,
           actorName,
         );
@@ -264,7 +294,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
         if (isCreatingNewEvent) {
           addStoredNotification(
             "created",
-            savedRecord.customerName ?? savedRecord.title,
+            savedRecord.customerName ?? savedRecord.eventType ?? "Event",
             savedRecord.eventDate,
             actorName,
           );
@@ -337,6 +367,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
     "Others-409",
     "Others-410",
   ];
+  const originalRooms = new Set<string>(existingEvent?.rooms ?? []);
   const [roomsAnchorEl, setRoomsAnchorEl] = React.useState<null | HTMLElement>(
     null,
   );
@@ -348,10 +379,31 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
       return;
     }
 
-    if (mode === "edit" && !isAdmin) {
+    if (
+      mode === "edit" &&
+      !authLoading &&
+      !isAdmin &&
+      user?.roleId !== 2
+    ) {
       navigate("/events", { replace: true });
     }
-  }, [mode, isAdmin, eventId, navigate]);
+    if (
+      mode === "edit" &&
+      user?.roleId === 2 &&
+      existingEvent &&
+      existingEvent.eventSource !== "Booking"
+    ) {
+      navigate("/events", { replace: true });
+    }
+  }, [
+    mode,
+    isAdmin,
+    user?.roleId,
+    authLoading,
+    eventId,
+    existingEvent,
+    navigate,
+  ]);
 
   // Helper function to format date to YYYY-MM-DD without timezone issues
   const toLocalIsoDate = (date: Date) => {
@@ -369,11 +421,6 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   };
 
   // Helper to check if a date is a muhurt date
-  const isMuhurtDate = (date: Date) => {
-    const iso = toLocalIsoDate(date);
-    return muhurtDates.some((d) => d.date === iso);
-  };
-
   // Helper to get Muhurt info for a date
   const getMuhurtInfo = (date: Date) => {
     const iso = toLocalIsoDate(date);
@@ -391,6 +438,15 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
       )
     : [];
   const hasSelectedDateBooking = selectedDateBookings.length > 0;
+  const selectedMuhurt = formData.eventDate
+    ? getMuhurtInfo(
+        parseLocalIsoDate(formData.eventDate) || new Date(),
+      )
+    : null;
+  const selectedMuhurtColor =
+    selectedMuhurt?.type === "Sub Muhurt"
+      ? { background: "#e8f5e9", border: "#2e7d32", text: "#1b5e20" }
+      : { background: "#ffebee", border: "#c62828", text: "#b71c1c" };
 
   const prefillFieldSx = isFromEnquiry
     ? {
@@ -432,6 +488,24 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
   return (
     <Box sx={{ maxWidth: 600, mx: "auto", my: 0 }}>
       <form onSubmit={handleSubmit} autoComplete="off">
+        {isReadOnly && (
+          <Button
+            variant="outlined"
+            onClick={() => navigate(-1)}
+            sx={{ mb: 1.5 }}
+          >
+            Back
+          </Button>
+        )}
+        {saveError && (
+          <Typography role="alert" color="error" sx={{ mb: 1.5 }}>
+            {saveError}
+          </Typography>
+        )}
+        <fieldset
+          disabled={isReadOnly}
+          style={{ border: 0, margin: 0, minWidth: 0, padding: 0 }}
+        >
         <Card
           sx={{
             mb: 3,
@@ -481,7 +555,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                   variant="h6"
                   sx={{ color: "#fff", fontWeight: 800 }}
                 >
-                  Basic Information
+                  {isReadOnly ? "Event Details" : "Basic Information"}
                 </Typography>
                 {isFromEnquiry && (
                   <Chip
@@ -500,7 +574,11 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
             subheader={
               isFromEnquiry
                 ? "Convert enquiry into a confirmed event"
-                : "Add event details and select rooms"
+                : isReadOnly
+                  ? "View the saved event details"
+                  : isManagerRoomEdit
+                    ? "Select additional rooms"
+                    : "Add event details and select rooms"
             }
             subheaderTypographyProps={{
               sx: { color: "rgba(255,255,255,0.86)", fontWeight: 500 },
@@ -532,6 +610,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                         <DatePicker
                           label="Date"
                           format="dd/MM/yyyy"
+                          disabled={isManagerRoomEdit || isReadOnly}
                           value={parseLocalIsoDate(formData.eventDate)}
                           onChange={(date: Date | null) => {
                             if (date) {
@@ -542,18 +621,24 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                           }}
                           slots={{
                             day: (dayProps) => {
-                              const isMuhurt = isMuhurtDate(dayProps.day);
+                              const dayMuhurt = getMuhurtInfo(dayProps.day);
                               return (
                                 <PickersDay
                                   {...dayProps}
                                   sx={
-                                    isMuhurt
+                                    dayMuhurt
                                       ? {
-                                          backgroundColor: "#ff5252",
+                                          backgroundColor:
+                                            dayMuhurt.type === "Sub Muhurt"
+                                              ? "#2e7d32"
+                                              : "#c62828",
                                           color: "#fff",
                                           borderRadius: "50%",
                                           "&:hover": {
-                                            backgroundColor: "#e53935",
+                                            backgroundColor:
+                                              dayMuhurt.type === "Sub Muhurt"
+                                                ? "#1b5e20"
+                                                : "#b71c1c",
                                           },
                                           border: "2px solid #fff",
                                         }
@@ -568,35 +653,31 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                               variant: "outlined",
                               required: true,
                               fullWidth: true,
+                              disabled: isManagerRoomEdit || isReadOnly,
                               InputLabelProps: { shrink: true },
                               sx: prefillFieldSx,
                             },
                           }}
                         />
-                        {formData.eventDate &&
-                          isMuhurtDate(
-                            parseLocalIsoDate(formData.eventDate) || new Date(),
-                          ) && (
+                        {selectedMuhurt && (
                             <Box
                               sx={{
                                 mt: 1,
                                 p: 1,
-                                bgcolor: "#ffe5e5",
+                                bgcolor: selectedMuhurtColor.background,
                                 borderRadius: 1,
-                                border: "1px solid #ff5252",
+                                border: `1px solid ${selectedMuhurtColor.border}`,
                               }}
                             >
                               <Typography
                                 variant="caption"
-                                sx={{ color: "#d32f2f", fontWeight: 600 }}
+                                sx={{
+                                  color: selectedMuhurtColor.text,
+                                  fontWeight: 600,
+                                }}
                               >
-                                ✓ Muhurt Date:{" "}
-                                {
-                                  getMuhurtInfo(
-                                    parseLocalIsoDate(formData.eventDate) ||
-                                      new Date(),
-                                  )?.description
-                                }
+                                ✓ {selectedMuhurt.type}:{" "}
+                                {selectedMuhurt.description}
                               </Typography>
                             </Box>
                           )}
@@ -658,6 +739,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                           onChange={(e) =>
                             updateField("eventTime", e.target.value)
                           }
+                          disabled={isManagerRoomEdit}
                           InputLabelProps={{ shrink: true }}
                           required
                           fullWidth
@@ -669,19 +751,11 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                 </Box>
               </Box>
               <TextField
-                label="Title *"
-                placeholder="Event title"
-                value={formData.title}
-                onChange={(e) => updateField("title", e.target.value)}
-                required
-                fullWidth
-                sx={prefillFieldSx}
-              />
-              <TextField
                 label="Customer *"
                 placeholder="Customer name"
                 value={formData.customer}
                 onChange={(e) => updateField("customer", e.target.value)}
+                disabled={isManagerRoomEdit}
                 required
                 fullWidth
                 sx={prefillFieldSx}
@@ -693,6 +767,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                 onChange={(e) =>
                   updateField("phone", sanitizePhoneInput(e.target.value))
                 }
+                disabled={isManagerRoomEdit}
                 required
                 fullWidth
                 inputProps={{
@@ -709,6 +784,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                 onChange={(e) =>
                   updateField("altPhone", sanitizePhoneInput(e.target.value))
                 }
+                disabled={isManagerRoomEdit}
                 fullWidth
                 inputProps={{
                   maxLength: 10,
@@ -722,15 +798,29 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                 label="Event Type *"
                 value={formData.eventType}
                 onChange={(e) => updateField("eventType", e.target.value)}
+                disabled={isManagerRoomEdit || isReadOnly}
                 required
                 fullWidth
                 sx={prefillFieldSx}
+                SelectProps={{
+                  MenuProps: {
+                    PaperProps: {
+                      sx: { maxHeight: "min(50vh, 320px)" },
+                    },
+                  },
+                }}
               >
                 <MenuItem value="">Select event type...</MenuItem>
-                <MenuItem value="Wedding">Wedding</MenuItem>
-                <MenuItem value="Conference">Conference</MenuItem>
                 <MenuItem value="Birthday">Birthday</MenuItem>
+                <MenuItem value="Carnival">Carnival</MenuItem>
+                <MenuItem value="Conference">Conference</MenuItem>
                 <MenuItem value="Corporate">Corporate</MenuItem>
+                <MenuItem value="Engagement">Engagement</MenuItem>
+                <MenuItem value="Haldi">Haldi</MenuItem>
+                <MenuItem value="Mayra">Mayra</MenuItem>
+                <MenuItem value="Munja">Munja</MenuItem>
+                <MenuItem value="Sangeet">Sangeet</MenuItem>
+                <MenuItem value="Wedding">Wedding</MenuItem>
                 <MenuItem value="Other">Other</MenuItem>
               </TextField>
               <TextField
@@ -738,28 +828,40 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                 label="Venue *"
                 value={formData.venue}
                 onChange={(e) => updateField("venue", e.target.value)}
+                disabled={isManagerRoomEdit || isReadOnly}
                 required
                 fullWidth
                 sx={prefillFieldSx}
                 // placeholder and SelectProps reverted
               >
                 <MenuItem value="">Select venue...</MenuItem>
-                <MenuItem value="Phase 1">Phase 1</MenuItem>
-                <MenuItem value="Phase 2">Phase 2</MenuItem>
+                {venueOptions.map((venue) => (
+                  <MenuItem value={venue} key={venue}>
+                    {venue}
+                  </MenuItem>
+                ))}
               </TextField>
               {/* Group-wise Multi-Select Dropdown for Rooms */}
               <FormControl fullWidth required sx={prefillFieldSx}>
-                <InputLabel id="rooms-multiselect-label">Rooms *</InputLabel>
+                <InputLabel
+                  id="rooms-multiselect-label"
+                  htmlFor="rooms-multiselect-input"
+                >
+                  Rooms *
+                </InputLabel>
                 <OutlinedInput
+                  id="rooms-multiselect-input"
                   label="Rooms *"
                   value={formData.rooms}
                   readOnly
+                  disabled={isReadOnly}
                   // placeholder reverted
                   endAdornment={
                     <IconButton
                       onClick={(e) => setRoomsAnchorEl(e.currentTarget)}
                       edge="end"
                       size="small"
+                      disabled={isReadOnly}
                     >
                       <ExpandMoreIcon />
                     </IconButton>
@@ -785,11 +887,14 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                     minWidth: 0,
                     maxWidth: "calc(100vw - 32px)",
                     boxSizing: "border-box",
+                    maxHeight: "min(70vh, 480px)",
+                    overflowY: "auto",
+                    overscrollBehavior: "contain",
                   },
                 }}
               >
                 <Box sx={{ p: { xs: 1, sm: 2 }, minWidth: 0 }}>
-                  {/* Phase 1 group */}
+                  {/* PADMA room group */}
                   <Box sx={{ mb: 1 }}>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                       <Checkbox
@@ -809,14 +914,16 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                   new Set([...formData.rooms, ...phase1Rooms]),
                                 )
                               : formData.rooms.filter(
-                                  (r: string) => !phase1Rooms.includes(r),
+                                  (r: string) =>
+                                    !phase1Rooms.includes(r) ||
+                                    (isManagerRoomEdit && originalRooms.has(r)),
                                 ),
                           );
                         }}
                         size="small"
                       />
                       <Typography sx={{ fontWeight: 600 }}>
-                        Phase 1 (9)
+                        PADMA (9)
                       </Typography>
                     </Box>
                     <Box
@@ -835,6 +942,13 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                             checked={formData.rooms.includes(room)}
                             onChange={(e) => {
                               const checked = e.target.checked;
+                              if (
+                                !checked &&
+                                isManagerRoomEdit &&
+                                originalRooms.has(room)
+                              ) {
+                                return;
+                              }
                               updateField(
                                 "rooms",
                                 checked
@@ -844,6 +958,9 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                     ),
                               );
                             }}
+                            disabled={
+                              isManagerRoomEdit && originalRooms.has(room)
+                            }
                             size="small"
                           />
                           <ListItemText
@@ -855,7 +972,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                     </Box>
                   </Box>
                   <Divider sx={{ my: 1 }} />
-                  {/* Phase 2 group */}
+                  {/* SONCHAFA room group */}
                   <Box sx={{ mb: 1 }}>
                     <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                       <Checkbox
@@ -875,14 +992,16 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                   new Set([...formData.rooms, ...phase2Rooms]),
                                 )
                               : formData.rooms.filter(
-                                  (r: string) => !phase2Rooms.includes(r),
+                                  (r: string) =>
+                                    !phase2Rooms.includes(r) ||
+                                    (isManagerRoomEdit && originalRooms.has(r)),
                                 ),
                           );
                         }}
                         size="small"
                       />
                       <Typography sx={{ fontWeight: 600 }}>
-                        Phase 2 (6)
+                        SONCHAFA (6)
                       </Typography>
                     </Box>
                     <Box
@@ -901,6 +1020,13 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                             checked={formData.rooms.includes(room)}
                             onChange={(e) => {
                               const checked = e.target.checked;
+                              if (
+                                !checked &&
+                                isManagerRoomEdit &&
+                                originalRooms.has(room)
+                              ) {
+                                return;
+                              }
                               updateField(
                                 "rooms",
                                 checked
@@ -910,6 +1036,9 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                     ),
                               );
                             }}
+                            disabled={
+                              isManagerRoomEdit && originalRooms.has(room)
+                            }
                             size="small"
                           />
                           <ListItemText
@@ -941,7 +1070,9 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                   new Set([...formData.rooms, ...othersRooms]),
                                 )
                               : formData.rooms.filter(
-                                  (r: string) => !othersRooms.includes(r),
+                                  (r: string) =>
+                                    !othersRooms.includes(r) ||
+                                    (isManagerRoomEdit && originalRooms.has(r)),
                                 ),
                           );
                         }}
@@ -969,6 +1100,13 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                             checked={formData.rooms.includes(room)}
                             onChange={(e) => {
                               const checked = e.target.checked;
+                              if (
+                                !checked &&
+                                isManagerRoomEdit &&
+                                originalRooms.has(room)
+                              ) {
+                                return;
+                              }
                               updateField(
                                 "rooms",
                                 checked
@@ -978,6 +1116,9 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                                     ),
                               );
                             }}
+                            disabled={
+                              isManagerRoomEdit && originalRooms.has(room)
+                            }
                             size="small"
                           />
                           <ListItemText
@@ -1028,6 +1169,7 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                             type="button"
                             role="button"
                             aria-pressed={isSelected}
+                            disabled={isManagerRoomEdit}
                             onClick={() => updateField("eventSource", option)}
                             sx={{
                               flex: 1,
@@ -1073,28 +1215,37 @@ export function EventFormScreen({ mode = "add" }: { mode?: "add" | "edit" }) {
                     : "1.5px solid rgba(39,48,66,0.12)",
                 }}
               >
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  startIcon={<X size={16} />}
-                  onClick={() => navigate(-1)}
-                  sx={{ px: 2.25, py: 0.8 }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  type="submit"
-                  startIcon={<Save size={16} />}
-                  sx={{ px: 2.25, py: 0.8 }}
-                >
-                  {mode === "edit" ? "Update" : "Create"}
-                </Button>
+                {!isReadOnly && (
+                  <>
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      startIcon={<X size={16} />}
+                      onClick={() => navigate(-1)}
+                      sx={{ px: 2.25, py: 0.8 }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      type="submit"
+                      startIcon={<Save size={16} />}
+                      sx={{ px: 2.25, py: 0.8 }}
+                    >
+                      {isManagerRoomEdit
+                        ? "Save Rooms"
+                        : mode === "edit"
+                          ? "Update"
+                          : "Create"}
+                    </Button>
+                  </>
+                )}
               </Stack>
             </Stack>
           </CardContent>
         </Card>
+        </fieldset>
       </form>
     </Box>
   );

@@ -6,6 +6,7 @@ import { CheckCircle2 } from "lucide-react";
 import { Card, CardContent, Typography, Stack, Box, Chip } from "@mui/material";
 import SearchFilter from "../components/SearchFilter";
 import { useNavigate } from "react-router-dom";
+import { normalizeVenueName } from "../../src/data/venues";
 
 export function CompletedEventsScreen() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export function CompletedEventsScreen() {
       if (toDate && recordDate > toDate) return false;
       if (!search) return true;
       const haystack =
-        `${record.customerName ?? ""} ${record.title} ${record.venue}`.toLowerCase();
+        `${record.customerName ?? ""} ${record.eventType ?? ""} ${normalizeVenueName(record.venue)}`.toLowerCase();
       return haystack.includes(search.toLowerCase());
     }),
   );
@@ -126,6 +127,10 @@ export function CompletedEventsScreen() {
               key={event.id ?? event._id ?? idx}
               event={event}
               mode="completed"
+              onView={() => {
+                const eventId = event.id ?? event._id;
+                if (eventId) navigate(`/events/${eventId}/view`);
+              }}
               onClick={() => navigate(`/inventory/missing/${event.id}`)}
             />
           ))}

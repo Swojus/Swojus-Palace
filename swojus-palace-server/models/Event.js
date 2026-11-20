@@ -8,7 +8,6 @@ const InventoryItem = new mongoose.Schema({
 });
 
 const EventSchema = new mongoose.Schema({
-  title: String,
   customerName: String,
   phone: String,
   altPhone: String,

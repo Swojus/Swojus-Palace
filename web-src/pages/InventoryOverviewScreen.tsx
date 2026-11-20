@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import SearchFilter from "../components/SearchFilter";
 import { LoadingState } from "../components";
+import { normalizeVenueName } from "../../src/data/venues";
 
 export function InventoryOverviewScreen() {
   const navigate = useNavigate();
@@ -60,9 +61,9 @@ export function InventoryOverviewScreen() {
       const total = missing.reduce((sum, item) => sum + item.qty, 0);
       return {
         id: record.id,
-        title: record.title,
+        eventType: record.eventType ?? "",
         customer: record.customerName ?? record.name ?? "",
-        venue: record.venue,
+        venue: normalizeVenueName(record.venue),
         date: record.eventDate ?? "",
         total,
         firstMissing: missing[0],
@@ -75,7 +76,7 @@ export function InventoryOverviewScreen() {
   const filteredEvents = missingByEvent.filter((event) => {
     const q = search.toLowerCase();
     return (
-      event.title.toLowerCase().includes(q) ||
+      event.eventType.toLowerCase().includes(q) ||
       event.customer.toLowerCase().includes(q) ||
       event.venue.toLowerCase().includes(q)
     );
@@ -227,13 +228,13 @@ export function InventoryOverviewScreen() {
                   >
                     <Box sx={{ minWidth: 0, flex: 1 }}>
                       <Typography variant="subtitle1" fontWeight={800}>
-                        {event.title}
+                        {event.eventType || "Event"}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {event.customer}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {event.venue}
+                        {normalizeVenueName(event.venue)}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {event.date}

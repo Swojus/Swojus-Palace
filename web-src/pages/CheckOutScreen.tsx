@@ -1,8 +1,13 @@
 import React from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { mockRecords, saveMockRecordUpdate } from "../../src/data/mock";
+import {
+  mockRecords,
+  saveMockRecordUpdate,
+  withMattressInventory,
+} from "../../src/data/mock";
 import apiFetch from "../utils/api";
 import { addStoredNotification } from "../../src/data/notificationLog";
+import { normalizeVenueName } from "../../src/data/venues";
 import { useAuth } from "../AuthContext";
 import {
   ArrowLeft,
@@ -41,6 +46,7 @@ const iconByName: Record<string, React.ReactNode> = {
   pillows: <Square size={ITEM_ICON_SIZE} />,
   cushion: <Square size={ITEM_ICON_SIZE} />,
   duvets: <Square size={ITEM_ICON_SIZE} />,
+  mattress: <BedSingle size={ITEM_ICON_SIZE} />,
   towels: <Shirt size={ITEM_ICON_SIZE} />,
   napkins: <UtensilsCrossed size={ITEM_ICON_SIZE} />,
 };
@@ -77,7 +83,7 @@ export function CheckOutScreen() {
     };
   }, [eventId]);
 
-  const inventory = event?.inventory ?? [];
+  const inventory = withMattressInventory(event?.inventory ?? []);
   const eventDate = event?.eventDate
     ? new Date(`${event.eventDate}T00:00:00`)
     : null;
@@ -141,7 +147,7 @@ export function CheckOutScreen() {
 
     setCheckoutError("");
 
-    const updatedInventory = (event.inventory ?? []).map((item: any) => ({
+    const updatedInventory = inventory.map((item: any) => ({
       ...item,
       returnedQty: returnedCounts[item.id] ?? item.returnedQty ?? 0,
     }));
@@ -155,7 +161,7 @@ export function CheckOutScreen() {
       .then((saved) => {
         addStoredNotification(
           "checkout",
-          saved.customerName ?? saved.title,
+          saved.customerName ?? saved.eventType,
           saved.eventDate,
           actorName,
         );
@@ -168,7 +174,7 @@ export function CheckOutScreen() {
         });
         addStoredNotification(
           "checkout",
-          event.customerName ?? event.title,
+          event.customerName ?? event.eventType,
           event.eventDate,
           actorName,
         );
@@ -221,7 +227,7 @@ export function CheckOutScreen() {
           className="material-desc"
           style={{ margin: 0, fontSize: "0.95rem", fontWeight: 600 }}
         >
-          {event.venue}
+          {normalizeVenueName(event.venue)}
         </p>
       </article>
 

@@ -20,10 +20,11 @@ import {
 } from "@mui/material";
 import Fab from "@mui/material/Fab";
 import SearchFilter from "../components/SearchFilter";
+import { normalizeVenueName } from "../../src/data/venues";
 
 export function BookedEventsScreen() {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const toLocalIsoDate = (date: Date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -32,19 +33,19 @@ export function BookedEventsScreen() {
   };
   const [deleteTarget, setDeleteTarget] = React.useState<null | {
     id: string;
-    title: string;
+    eventType: string;
     customerName?: string;
   }>(null);
 
   const handleDeleteRequest = (
     eventId?: string,
-    title?: string,
+    eventType?: string,
     customerName?: string,
   ) => {
     if (!eventId) return;
     setDeleteTarget({
       id: eventId,
-      title: title ?? "This event",
+      eventType: eventType ?? "Event",
       customerName,
     });
   };
@@ -90,7 +91,7 @@ export function BookedEventsScreen() {
       }
       if (!search) return true;
       const haystack =
-        `${record.customerName ?? ""} ${record.title} ${record.venue}`.toLowerCase();
+        `${record.customerName ?? ""} ${record.eventType ?? ""} ${normalizeVenueName(record.venue)}`.toLowerCase();
       return haystack.includes(search.toLowerCase());
     })
     .sort((a, b) => {
@@ -217,16 +218,23 @@ export function BookedEventsScreen() {
               <EventCard
                 key={eventId ?? idx}
                 event={event}
-                {...(isAdmin
+                onView={() => {
+                  if (eventId) navigate(`/events/${eventId}/view`);
+                }}
+                {...(isAdmin || user?.roleId === 2
                   ? {
                       onEdit: () => {
                         if (!eventId) return;
                         navigate(`/events/${eventId}/edit`);
                       },
+                    }
+                  : {})}
+                {...(isAdmin
+                  ? {
                       onDelete: () =>
                         handleDeleteRequest(
                           eventId,
-                          event.title,
+                          event.eventType,
                           event.customerName,
                         ),
                     }
@@ -263,7 +271,7 @@ export function BookedEventsScreen() {
             Are you sure you want to delete this event?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {deleteTarget?.customerName || "Customer"} — {deleteTarget?.title}
+            {deleteTarget?.customerName || "Customer"} — {deleteTarget?.eventType}
           </Typography>
         </DialogContent>
         <DialogActions

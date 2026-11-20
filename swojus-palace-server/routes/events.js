@@ -6,7 +6,6 @@ const { authMiddleware, requireAdmin } = require("../middleware/auth");
 
 function getConversionUpdates(data) {
   return {
-    title: data.title,
     customerName: data.customerName,
     phone: data.phone,
     altPhone: data.altPhone,
@@ -32,7 +31,7 @@ async function notifyAdminOfConversion(user, event) {
   if (user.roleId !== 1) {
     await Notification.create({
       action: "converted",
-      eventName: event.customerName || event.title || "New event",
+      eventName: event.customerName || event.eventType || "New event",
       eventDate: event.eventDate,
       actorName: user.name || user.email || "Manager",
     });
@@ -52,6 +51,32 @@ router.get("/:id", authMiddleware, async (req, res) => {
   res.json(ev);
 });
 
+router.patch("/:id/rooms", authMiddleware, async (req, res) => {
+  if (req.user.roleId !== 2) {
+    return res.status(403).json({ error: "Manager access required" });
+  }
+
+  const body = req.body ?? {};
+  const { rooms } = body;
+  const hasOnlyRooms = Object.keys(body).every((key) => key === "rooms");
+  if (
+    !hasOnlyRooms ||
+    !Array.isArray(rooms) ||
+    rooms.some((room) => typeof room !== "string" || !room.trim())
+  ) {
+    return res.status(400).json({ error: "A valid rooms array is required" });
+  }
+
+  const updated = await Event.findOneAndUpdate(
+    { _id: req.params.id, eventSource: "Booking" },
+    { $addToSet: { rooms: { $each: rooms } } },
+    { new: true },
+  );
+  if (!updated) return res.status(404).json({ error: "Booking not found" });
+
+  res.json(updated);
+});
+
 // create event (admin or manager)
 router.post("/", authMiddleware, async (req, res) => {
   const data = req.body;
@@ -60,7 +85,7 @@ router.post("/", authMiddleware, async (req, res) => {
   if (req.user.roleId !== 1) {
     await Notification.create({
       action: "created",
-      eventName: created.customerName || created.title || "New event",
+      eventName: created.customerName || created.eventType || "New event",
       eventDate: created.eventDate,
       actorName:
         req.userDoc?.name || req.userDoc?.email || "Manager",
@@ -91,7 +116,7 @@ router.put("/:id", authMiddleware, async (req, res) => {
     if (updated) {
       await Notification.create({
         action: "updated",
-        eventName: updated.customerName || updated.title || "Event",
+        eventName: updated.customerName || updated.eventType || "Event",
         eventDate: updated.eventDate,
         actorName:
           req.userDoc?.name || req.userDoc?.email || "Admin",
@@ -125,8 +150,21 @@ router.post("/:id/checkin", authMiddleware, async (req, res) => {
   const { issuedCounts } = req.body; // { itemId: qty }
   const ev = await Event.findById(req.params.id);
   if (!ev) return res.status(404).json({ error: "Not found" });
-  ev.inventory = ev.inventory.map((it) => ({
-    ...it.toObject(),
+  const inventory = (ev.inventory ?? []).map((it) => it.toObject());
+  if (
+    !inventory.some(
+      (item) => item.id === "mattress" || item.name?.toLowerCase() === "mattress",
+    )
+  ) {
+    inventory.push({
+      id: "mattress",
+      name: "Mattress",
+      issuedQty: 0,
+      returnedQty: 0,
+    });
+  }
+  ev.inventory = inventory.map((it) => ({
+    ...it,
     issuedQty: issuedCounts?.[it.id] ?? it.issuedQty,
   }));
   await ev.save();
@@ -149,8 +187,21 @@ router.post("/:id/checkout", authMiddleware, async (req, res) => {
     });
   }
 
-  ev.inventory = ev.inventory.map((it) => ({
-    ...it.toObject(),
+  const inventory = (ev.inventory ?? []).map((it) => it.toObject());
+  if (
+    !inventory.some(
+      (item) => item.id === "mattress" || item.name?.toLowerCase() === "mattress",
+    )
+  ) {
+    inventory.push({
+      id: "mattress",
+      name: "Mattress",
+      issuedQty: 0,
+      returnedQty: 0,
+    });
+  }
+  ev.inventory = inventory.map((it) => ({
+    ...it,
     returnedQty: returnedCounts?.[it.id] ?? it.returnedQty ?? 0,
   }));
   ev.completed = true;

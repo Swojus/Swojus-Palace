@@ -1,8 +1,13 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { mockRecords, saveMockRecordUpdate } from "../../src/data/mock";
+import {
+  mockRecords,
+  saveMockRecordUpdate,
+  withMattressInventory,
+} from "../../src/data/mock";
 import apiFetch from "../utils/api";
 import { addStoredNotification } from "../../src/data/notificationLog";
+import { normalizeVenueName } from "../../src/data/venues";
 import { useAuth } from "../AuthContext";
 import {
   ArrowLeft,
@@ -36,6 +41,7 @@ const iconByName: Record<string, React.ReactNode> = {
   pillows: <Square size={ITEM_ICON_SIZE} />,
   cushion: <Square size={ITEM_ICON_SIZE} />,
   duvets: <Square size={ITEM_ICON_SIZE} />,
+  mattress: <BedSingle size={ITEM_ICON_SIZE} />,
   towels: <Shirt size={ITEM_ICON_SIZE} />,
   napkins: <UtensilsCrossed size={ITEM_ICON_SIZE} />,
 };
@@ -69,7 +75,7 @@ export function CheckInScreen() {
     };
   }, [eventId]);
 
-  const inventory = event?.inventory ?? [];
+  const inventory = withMattressInventory(event?.inventory ?? []);
 
   const inventoryRows = React.useMemo<IssuedRow[]>(
     () =>
@@ -89,7 +95,10 @@ export function CheckInScreen() {
     if (!event) return;
     setIssuedCounts(
       Object.fromEntries(
-        (event.inventory ?? []).map((item: any) => [item.id, item.issuedQty]),
+        withMattressInventory(event.inventory ?? []).map((item) => [
+          item.id,
+          item.issuedQty,
+        ]),
       ),
     );
   }, [event]);
@@ -115,7 +124,7 @@ export function CheckInScreen() {
   };
 
   const completeCheckIn = () => {
-    const updatedInventory = (event.inventory ?? []).map((item: any) => ({
+    const updatedInventory = inventory.map((item: any) => ({
       ...item,
       issuedQty: issuedCounts[item.id] ?? item.issuedQty,
     }));
@@ -130,7 +139,7 @@ export function CheckInScreen() {
       .then((saved) => {
         addStoredNotification(
           "checkin",
-          saved.customerName ?? saved.title,
+          saved.customerName ?? saved.eventType,
           saved.eventDate,
           actorName,
         );
@@ -144,7 +153,7 @@ export function CheckInScreen() {
         });
         addStoredNotification(
           "checkin",
-          event.customerName ?? event.title,
+          event.customerName ?? event.eventType,
           event.eventDate,
           actorName,
         );
@@ -197,7 +206,7 @@ export function CheckInScreen() {
           className="material-desc"
           style={{ margin: 0, fontSize: "0.95rem", fontWeight: 600 }}
         >
-          {event.venue}
+          {normalizeVenueName(event.venue)}
         </p>
       </article>
 

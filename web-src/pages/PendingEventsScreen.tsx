@@ -6,6 +6,7 @@ import { EventCard, LoadingState } from "../components";
 import SearchFilter from "../components/SearchFilter";
 import apiFetch from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import { normalizeVenueName } from "../../src/data/venues";
 
 function toLocalIsoDate(date: Date) {
   const year = date.getFullYear();
@@ -53,7 +54,7 @@ export function PendingEventsScreen() {
 
       if (!search.trim()) return true;
       const haystack =
-        `${event.customerName ?? ""} ${event.title ?? ""} ${event.venue ?? ""}`.toLowerCase();
+        `${event.customerName ?? ""} ${event.eventType ?? ""} ${normalizeVenueName(event.venue)}`.toLowerCase();
       return haystack.includes(search.trim().toLowerCase());
     }),
   );
@@ -122,6 +123,9 @@ export function PendingEventsScreen() {
                 key={eventId ?? index}
                 event={event}
                 showCheckOut
+                onView={() => {
+                  if (eventId) navigate(`/events/${eventId}/view`);
+                }}
                 onEdit={() => {
                   if (eventId) navigate(`/events/${eventId}/edit`);
                 }}

@@ -120,13 +120,11 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
           <Route path="/events/new" element={<EventFormScreen mode="add" />} />
           <Route
             path="/events/:eventId/edit"
-            element={
-              isAdmin ? (
-                <EventFormScreen mode="edit" />
-              ) : (
-                <Navigate to="/events" replace />
-              )
-            }
+            element={<EventFormScreen mode="edit" />}
+          />
+          <Route
+            path="/events/:eventId/view"
+            element={<EventFormScreen mode="view" />}
           />
           <Route path="/events/:eventId/check-in" element={<CheckInScreen />} />
           <Route
@@ -152,7 +150,12 @@ function AppInner({ onLogout }: { onLogout: () => void }) {
           />
           <Route path="/muhurt" element={<MuhurtScreen />} />
           <Route path="/notifications" element={<NotificationsScreen />} />
-          <Route path="/users" element={<UsersScreen />} />
+          <Route
+            path="/users"
+            element={
+              isAdmin ? <UsersScreen /> : <Navigate to="/events" replace />
+            }
+          />
           <Route
             path="/profile"
             element={<ProfileScreen onLogout={onLogout} />}

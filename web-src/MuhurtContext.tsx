@@ -5,21 +5,23 @@ export type MuhurtDate = {
   id: string;
   date: string;
   description: string;
+  type: "Main Muhurt" | "Sub Muhurt";
 };
 
 type AddMuhurtDateInput = {
   date: string;
   description: string;
+  type: MuhurtDate["type"];
 };
 
 type MuhurtContextValue = {
   muhurtDates: MuhurtDate[];
   todayMuhurtDates: MuhurtDate[];
+  muhurtError: string;
+  refreshMuhurtDates: () => Promise<void>;
   addMuhurtDate: (input: AddMuhurtDateInput) => void;
   removeMuhurtDate: (id: string) => void;
 };
-
-const STORAGE_KEY = "eventflow/muhurt-dates";
 
 const initialMuhurtDates: MuhurtDate[] = [];
 
@@ -28,6 +30,7 @@ function normalizeMuhurtDate(item: any): MuhurtDate {
     id: item?.id ?? item?._id ?? "",
     date: item?.date ?? "",
     description: item?.description ?? "",
+    type: item?.type === "Sub Muhurt" ? "Sub Muhurt" : "Main Muhurt",
   };
 }
 
@@ -45,26 +48,41 @@ function toIsoDate(date: Date) {
 export function MuhurtProvider({ children }: { children: React.ReactNode }) {
   const [muhurtDates, setMuhurtDates] =
     React.useState<MuhurtDate[]>(initialMuhurtDates);
+  const [muhurtError, setMuhurtError] = React.useState("");
+  const requestId = React.useRef(0);
+
+  const refreshMuhurtDates = React.useCallback(async () => {
+    const activeRequestId = ++requestId.current;
+    setMuhurtError("");
+
+    try {
+      const response = await apiFetch(`/api/muhurt`, { method: "GET" });
+      if (!response.ok) {
+        throw new Error(`Unable to load Muhurt dates (${response.status}).`);
+      }
+
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error("The Muhurt service returned an invalid response.");
+      }
+
+      if (activeRequestId === requestId.current) {
+        setMuhurtDates(
+          data.map(normalizeMuhurtDate).filter((item) => item.id && item.date),
+        );
+      }
+    } catch (error) {
+      if (activeRequestId === requestId.current) {
+        setMuhurtError(
+          error instanceof Error ? error.message : "Unable to load Muhurt dates.",
+        );
+      }
+    }
+  }, []);
 
   React.useEffect(() => {
-    let mounted = true;
-    void apiFetch(`/api/muhurt`, { method: "GET" })
-      .then((r) => r.json())
-      .then((data) => {
-        if (!mounted) return;
-        if (Array.isArray(data)) {
-          setMuhurtDates(
-            data.map(normalizeMuhurtDate).filter((item) => item.id),
-          );
-        }
-      })
-      .catch(() => {
-        // keep local initial data on failure
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    void refreshMuhurtDates();
+  }, [refreshMuhurtDates]);
 
   const today = toIsoDate(new Date());
   const todayMuhurtDates = React.useMemo(
@@ -73,40 +91,73 @@ export function MuhurtProvider({ children }: { children: React.ReactNode }) {
   );
 
   const addMuhurtDate = React.useCallback(
-    ({ date, description }: AddMuhurtDateInput) => {
+    ({ date, description, type }: AddMuhurtDateInput) => {
+      setMuhurtError("");
       void apiFetch(`/api/muhurt`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, description }),
+        body: JSON.stringify({ date, description, type }),
       })
-        .then((r) => r.json())
-        .then((created) => {
-          setMuhurtDates((current) => [
-            ...current,
-            normalizeMuhurtDate(created),
-          ]);
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`Unable to save Muhurt date (${response.status}).`);
+          }
+          return response.json();
         })
-        .catch(() => {
-          // ignore errors for now
+        .then((created) => {
+          const item = normalizeMuhurtDate({ ...created, type });
+          if (!item.id || !item.date) {
+            throw new Error("The Muhurt service returned an invalid saved date.");
+          }
+          requestId.current += 1;
+          setMuhurtDates((current) => [...current, item]);
+        })
+        .catch((error: unknown) => {
+          setMuhurtError(
+            error instanceof Error ? error.message : "Unable to save Muhurt date.",
+          );
         });
     },
     [],
   );
 
   const removeMuhurtDate = React.useCallback((id: string) => {
+    setMuhurtError("");
     void apiFetch(`/api/muhurt/${id}`, { method: "DELETE" })
-      .then((r) => r.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Unable to delete Muhurt date (${response.status}).`);
+        }
+        return response.json();
+      })
       .then(() => {
+        requestId.current += 1;
         setMuhurtDates((current) => current.filter((item) => item.id !== id));
       })
-      .catch(() => {
-        // ignore errors for now
+      .catch((error: unknown) => {
+        setMuhurtError(
+          error instanceof Error ? error.message : "Unable to delete Muhurt date.",
+        );
       });
   }, []);
 
   const value = React.useMemo(
-    () => ({ muhurtDates, todayMuhurtDates, addMuhurtDate, removeMuhurtDate }),
-    [muhurtDates, todayMuhurtDates, addMuhurtDate, removeMuhurtDate],
+    () => ({
+      muhurtDates,
+      todayMuhurtDates,
+      muhurtError,
+      refreshMuhurtDates,
+      addMuhurtDate,
+      removeMuhurtDate,
+    }),
+    [
+      muhurtDates,
+      todayMuhurtDates,
+      muhurtError,
+      refreshMuhurtDates,
+      addMuhurtDate,
+      removeMuhurtDate,
+    ],
   );
 
   return (
